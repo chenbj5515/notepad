@@ -21,6 +21,8 @@ const state = {
   hasRightClicked: false,
   //重命名和新建文件夹都会让input框出现,要区分这种情况,在点击新建->文件夹时置为true，在renaming置为false的
   isNewFolder: false,
+
+
 }
 const getters = {
   getCurrentNode(state) {
@@ -62,7 +64,8 @@ const mutations = {
   },
   setIsNewFolderState(state, val) {
     Vue.set(state, 'isNewFolder', val)
-  }
+  },
+
 }
 
 const actions = {

@@ -90,14 +90,11 @@ import { setTimeout } from 'timers';
         },
         methods: {
             focus(node) {
-                console.log('focus事件', node)
                 if(this.isNewFolder) {
                     this.currentFileName = '新建文件夹'
                 } else {
-                    console.log(node.name)
                     this.currentFileName = node.name
                 }
-                console.log(event.currentTarget)
                 event.currentTarget.select()
             },
             blur(node) {
@@ -108,18 +105,23 @@ import { setTimeout } from 'timers';
             },
             inputMouseupHandle() {},
             isEditing(node) {
-                console.log(this.currentRightSelectNode)
-                console.log(this.renaming, 'renaming===')
                 var val = (node === this.currentRightSelectNode && this.renaming)
-                if (val && !this.inputDom) {
-                    this.$nextTick(() => {    
+                console.log(node, 'node===')
+                console.log(this.currentRightSelectNode, 'currentNode===')
+                console.log(this.renaming, 'renaming===')
+                console.log(val, 'val=======')
+                console.log(node.isShowInput, 'iss============')
+                if (val && !node.isShowInput) {
+                    this.$nextTick(() => {  
+                        console.log('next')  
                         let dom = document.querySelector('.editName')
-                        console.log(dom)
                         if(dom) {
+                            console.log(dom)
                             dom.focus()
                             dom.select()
                         } 
                     })
+                    node.isShowInput = true
                 }
                 return val
             },
