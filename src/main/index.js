@@ -23,9 +23,10 @@ function createWindow () {
    * Initial window options
    */
   mainWindow = new BrowserWindow({
-    height: 563,
+    height: 640,
+    minHeight: 640,
     useContentSize: true,
-    width: 1000,
+    width: 960,
     minWidth: 960,
     titleBarStyle: 'hidden'
     // type: 'textured',
