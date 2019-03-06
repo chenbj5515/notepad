@@ -18,6 +18,7 @@
 
             },
             newFoldClickHandle() {
+                debugger
                 store.dispatch('invokeSetRenameState', true)
             }
         }

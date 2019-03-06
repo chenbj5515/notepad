@@ -1,6 +1,7 @@
 import { app, BrowserWindow } from 'electron'
 import { Menu, MenuItem, dialog, ipcMain } from 'electron';
 import electron from 'electron'
+import '../renderer/store'
 //是否可以安全退出
 
 let safeExit = false;

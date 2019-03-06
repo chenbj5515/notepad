@@ -21,8 +21,10 @@ const state = {
   hasRightClicked: false,
   //重命名和新建文件夹都会让input框出现,要区分这种情况,在点击新建->文件夹时置为true，在renaming置为false的
   isNewFolder: false,
-
-
+  //保证每次重命名时都只出现一次自动全选
+  isAllSelected: false,
+  //根节点
+  root: {}
 }
 const getters = {
   getCurrentNode(state) {
@@ -65,6 +67,12 @@ const mutations = {
   setIsNewFolderState(state, val) {
     Vue.set(state, 'isNewFolder', val)
   },
+  setIsAllSelectedState(state, val) {
+    Vue.set(state, 'isAllSelected', val)
+  },
+  setRoot(state, val) {
+    Vue.set(state, 'root', val)
+  },
 
 }
 
@@ -83,6 +91,11 @@ const actions = {
   },
   invokeSetRenameState(context, val) {
     context.commit('setRenameState', val)
+    console.log('rename被设置为：', val)
+    if(val) {
+      console.log('把isAllSelected设为false')
+      this.dispatch('invokeSetIsAllSelectedState', false)
+    }
   },
   invokeSetGlobalClickedState(context, val) {
     context.commit('setGlobalClickedState', val)
@@ -92,6 +105,12 @@ const actions = {
   },
   invokeSetIsNewFolderState(context, val) {
     context.commit('setIsNewFolderState', val)
+  },
+  invokeSetIsAllSelectedState(context, val) {
+    context.commit('setIsAllSelectedState', val)
+  },
+  invokeSetRoot(context, val) {
+    context.commit('setRoot', val)
   }
 }
 

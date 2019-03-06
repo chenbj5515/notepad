@@ -13,7 +13,7 @@
             <!-- <MenuNew  class="menu-new"></MenuNew> -->
         </div>
         <div class="menuItem" @click.stop="renameClickHandle">重命名</div>
-        <div class="menuItem">删除</div>
+        <div class="menuItem" @click="deleteClickHandle">删除</div>
         <div class="menuItem">设置密码</div>
         
     </div>
@@ -31,10 +31,24 @@
             renameClickHandle() {
                 //rename触发input的显示
                 store.dispatch('invokeSetRenameState', true)
+                this.bindSelectEventListener()
                 //全局的点击事件触发时关闭菜单
                 store.dispatch('invokeSetGlobalClickedState', true)
                 //点击重命名时会清除右击选中状态
                 store.dispatch('invokeSetHasRightClickedState', false)
+            },
+            bindSelectEventListener() {
+                this.$nextTick(() => {
+                    let input = document.querySelector('.editName')
+                    console.log('input是存在的。。。')
+                    if(input) {
+                        console.log(input)
+                        input.addEventListener('select', () => {
+                            console.log('已经选中了')
+                            store.dispatch('invokeSetIsAllSelectedState', true)
+                        })
+                    }
+                })
             },
             newFileClickHandle() {
 
@@ -44,10 +58,13 @@
             },
             newFoldClickHandle() {
                 console.log('子组件的触发函数')
-                store.dispatch('invokeSetRenameState', true)
                 this.$emit('newFolder')
                 store.dispatch('invokeSetHasRightClickedState', false)
                 store.dispatch('invokeSetIsNewFolderState', true)
+                store.dispatch('invokeSetRenameState', true)
+            },
+            deleteClickHandle() {
+                this.$emit('deleteNode')
             }
         },
     }

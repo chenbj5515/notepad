@@ -29,6 +29,7 @@
 <script>
   import Tree from './tree/Tree'
   import store from '../store'
+  import { clearInterval } from 'timers';
   export default {
     data() {
       return {
@@ -62,7 +63,7 @@
               checked: true,
             }
           ]
-        }, ],
+        }],
         isClick: false,
         hasRightClicked: false,
       }
@@ -101,6 +102,7 @@
         store.dispatch('invokeSetRenameState', false)
       },
       keydownHandle() {
+        clearInterval(store.state.timer)
         console.log(event.code)
         if (event.code === 'Enter') {
           console.log('renameDone')
@@ -115,6 +117,9 @@
         }
       },
     },
+    created() {
+      store.dispatch('invokeSetRoot', this.treeData[0])
+    }
   }
 </script>
 
