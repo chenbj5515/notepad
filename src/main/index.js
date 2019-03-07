@@ -1,7 +1,11 @@
 import { app, BrowserWindow } from 'electron'
 import { Menu, MenuItem, dialog, ipcMain } from 'electron';
 import electron from 'electron'
+
 import '../renderer/store'
+var fs = require('fs')
+var path = require('path')
+const ipc = require('electron').ipcMain
 //是否可以安全退出
 
 let safeExit = false;
@@ -54,9 +58,17 @@ app.on('activate', () => {
   }
 })
 
+var str = '我是你哥哥/我们都是你妈的儿子'
 
-// //监听与渲染进程的通信
-// ipcMain.on('window-min',function(){
+fs.mkdir(str, { recursive: true }, (err) => {
+  // if (err) throw err;
+});
+
+//监听与渲染进程的通信
+// ipcMain.on('createFold',function(event, arg){
+//   console.log()
+// })
+// ipcMain.on('createFile',function(){
 //   mainWindow.minimize();
 // })
 // //登录窗口最大化

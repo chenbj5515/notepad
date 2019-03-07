@@ -38,31 +38,32 @@
           name: '我的文件夹',
           level: 0,
           checked: true,
-          children: [{
-              open: false,
-              name: '新节点1',
-              level: 1,
-              checked: true,
-            },
-            {
-              open: false,
-              name: '新节点2',
-              level: 1,
-              checked: true,
-            },
-            {
-              open: false,
-              name: '新节点3',
-              level: 1,
-              checked: true,
-            },
-            {
-              open: false,
-              name: '新节点4',
-              level: 1,
-              checked: true,
-            }
-          ]
+          path: '我的文件夹/',
+          // children: [{
+          //     open: false,
+          //     name: '新节点1',
+          //     level: 1,
+          //     checked: true,
+          //   },
+          //   {
+          //     open: false,
+          //     name: '新节点2',
+          //     level: 1,
+          //     checked: true,
+          //   },
+          //   {
+          //     open: false,
+          //     name: '新节点3',
+          //     level: 1,
+          //     checked: true,
+          //   },
+          //   {
+          //     open: false,
+          //     name: '新节点4',
+          //     level: 1,
+          //     checked: true,
+          //   }
+          // ]
         }],
         isClick: false,
         hasRightClicked: false,
@@ -96,16 +97,13 @@
         store.dispatch('invokeSetBin', true)
       },
       clickHandle() {
-        console.log('全局点击事件')
         store.dispatch('invokeSetGlobalClickedState', true)
         //全局的点击会保存更改的名字
         store.dispatch('invokeSetRenameState', false)
       },
       keydownHandle() {
         clearInterval(store.state.timer)
-        console.log(event.code)
         if (event.code === 'Enter') {
-          console.log('renameDone')
           store.dispatch('invokeSetRenameState', false)
         }
       },
@@ -186,10 +184,8 @@
           position: fixed;
         }
       }
-      .fileContent {}
     }
   }
-  .files {}
   .verticalCenter {
     position: absolute;
     top: 50%;

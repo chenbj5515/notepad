@@ -24,7 +24,11 @@ const state = {
   //保证每次重命名时都只出现一次自动全选
   isAllSelected: false,
   //根节点
-  root: {}
+  root: {},
+  //记录上一个按下的按键
+  lastKeyDown: '',
+  //记录当前按下的按键
+  currentKeyDown: '',
 }
 const getters = {
   getCurrentNode(state) {
@@ -40,6 +44,9 @@ const mutations = {
     if(state.lastNode && state.lastNode != state.currentNode) {
       Vue.set(state.lastNode, 'isSelect', false)
       Vue.set(state, 'binIsSelect', false)
+      //当切换当前左击选中节点时，按键状态丢失
+      this.dispatch('invokeSetCurrentKeyDown', '')
+      this.dispatch('invokeSetLastKeyDown', '')
     }
     //右击不会影响点击的影响，但是点击时要能清除右击造成的状态
     this.dispatch('setCurrentRightSelectNode', val)
@@ -48,9 +55,11 @@ const mutations = {
     Vue.set(state, 'lastRightSelectNode', state.currentRightSelectNode)
     Vue.set(state, 'currentRightSelectNode', val)
     //保证永远只有当前的node的isSelect为true
-    // if(state.lastRightSelectNode && state.lastRightSelectNode != state.currentRightSelectNode) {
-    //   Vue.set(state.lastRightSelectNode, 'isSelect', false)
-    // }
+    if(state.lastRightSelectNode && state.lastRightSelectNode != state.currentRightSelectNode) {
+      //当切换当前右击选中节点时，按键状态丢失
+      this.dispatch('invokeSetCurrentKeyDown', '')
+      this.dispatch('invokeSetLastKeyDown', '')
+    }
   },
   setBinSelectState(state, val) {
     Vue.set(state, 'binIsSelect', val)
@@ -73,6 +82,12 @@ const mutations = {
   setRoot(state, val) {
     Vue.set(state, 'root', val)
   },
+  setLastKeyDown(state, val) {
+    Vue.set(state, 'lastKeyDown', val)
+  },
+  setCurrentKeyDown(state, val) {
+    Vue.set(state, 'currentKeyDown', val)
+  }
 
 }
 
@@ -91,9 +106,7 @@ const actions = {
   },
   invokeSetRenameState(context, val) {
     context.commit('setRenameState', val)
-    console.log('rename被设置为：', val)
     if(val) {
-      console.log('把isAllSelected设为false')
       this.dispatch('invokeSetIsAllSelectedState', false)
     }
   },
@@ -111,6 +124,12 @@ const actions = {
   },
   invokeSetRoot(context, val) {
     context.commit('setRoot', val)
+  },
+  invokeSetLastKeyDown(context, val) {
+    context.commit('setLastKeyDown', val)
+  },
+  invokeSetCurrentKeyDown(context, val) {
+    context.commit('setCurrentKeyDown', val)
   }
 }
 

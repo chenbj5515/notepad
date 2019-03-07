@@ -4,7 +4,7 @@
             <Icon class="arrow-right" size="12" type="md-arrow-dropright" />
             <div class="menuNew" 
                 :style="{
-                    left: x + 73 + 'px',
+                    left: x + 72 + 'px',
                     top: y + 'px'   
                 }">
                 <div class="menuItem" @click="newFileClickHandle">笔记</div>
@@ -40,11 +40,8 @@
             bindSelectEventListener() {
                 this.$nextTick(() => {
                     let input = document.querySelector('.editName')
-                    console.log('input是存在的。。。')
                     if(input) {
-                        console.log(input)
                         input.addEventListener('select', () => {
-                            console.log('已经选中了')
                             store.dispatch('invokeSetIsAllSelectedState', true)
                         })
                     }
@@ -57,11 +54,11 @@
 
             },
             newFoldClickHandle() {
-                console.log('子组件的触发函数')
                 this.$emit('newFolder')
                 store.dispatch('invokeSetHasRightClickedState', false)
                 store.dispatch('invokeSetIsNewFolderState', true)
                 store.dispatch('invokeSetRenameState', true)
+                this.bindSelectEventListener()
             },
             deleteClickHandle() {
                 this.$emit('deleteNode')

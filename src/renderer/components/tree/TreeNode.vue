@@ -1,10 +1,10 @@
 <template>
     <div class="container">
         <li :class="['node']" v-for="node in data" :key='node.index'>
-            <div v-if="node.children" @mouseup="rightCilckHandle(node)" :class="{
+            <div v-if="node.children && node.children.length > 0" @mouseup="rightCilckHandle(node)" :class="{
                         isSelected: node.isSelect && node === currentNode,
                         toBeEdit: hasRightClicked && node === currentRightSelectNode
-                    }" class="li-hover-item" :style="{ paddingLeft: ( node.level*15 + 33 ) + 'px' }">
+                    }" class="li-hover-item hasChild" :style="{ paddingLeft: ( node.level*15 + 33 ) + 'px' }">
                 <Icon class="arrow" color="#909090" @click.stop="foldHandle(node)" :style="{
                         left: node.level*15 + 12 + 'px'
                     }" :class="{
@@ -12,23 +12,21 @@
                     }" v-if="node.children.length > 0" size="15" type="md-arrow-dropright" />
                 <i class="folderIcon folderIconOpen" color="#797f8d" size="18" v-if="node.children.length > 0 && node.open" type="ios-folder-open"></i>
                 <i class="folderIcon folderIconOutline" size="18" v-if="!node.children || node.children.length === 0 || !node.open" type="ios-folder-outline"></i>
-                <input v-if="isEditing(node)" ref="input" class="editName" v-model="currentFileName" @focus="focus(node)" @blur="blur(node)" @click.stop="inputClickHandle()" type="text">
+                <input v-if="isEditing(node)" ref="input" class="editName" v-model="currentFileName" @focus="focus(node)" @blur="blur(node)" @click.stop="" type="text">
                 <p class="nodeName" v-else> {{ node.name }} </p>
-                <!-- {{node.name}} -->
             </div>
-            <div v-else @mouseup="rightCilckHandle(node)" class="li-hover-item" :style="{ paddingLeft: ( node.level*15 + 33 ) + 'px' }" :class="{
-                            isSelected: node.isSelect && node === currentNode,
-                            toBeEdit: hasRightClicked && node === currentRightSelectNode
-                        }">
+            <div v-else @mouseup="rightCilckHandle(node)" class="li-hover-item hasNoChild" :style="{ paddingLeft: ( node.level*15 + 33 ) + 'px' }" :class="{
+                        isSelected: node.isSelect && node === currentNode,
+                        toBeEdit: hasRightClicked && node === currentRightSelectNode
+                    }">
                 <i class="folderIcon folderIconOutline" size="18" type="ios-folder-outline"></i>
-                <!-- {{node.name}} -->
-                <input v-if="isEditing(node)" class="editName" v-model="currentFileName" @focus="focus(node)" @blur="blur(node)" @mouseup.stop="inputMouseupHandle" @click.stop="inputClickHandle()" type="text">
+                <input v-if="isEditing(node)" class="editName" v-model="currentFileName" @focus="focus(node)" @blur="blur(node)" @mouseup.stop="" @click.stop="" type="text">
                 <p class="nodeName" v-else> {{ node.name }} </p>
             </div>
             <Menu :style="{
                     left: x + 'px',
                     top: y + 'px'   
-                }" class="menu" v-if="isShowMenu(node)" :x='x' :y='y' @deleteNode="deleteNode" @newFolder="newFolder"></Menu>
+                }" class="menu" v-if="isShowMenu(node)" :x='x' :y='y' @deleteNode="deleteNode('right')" @newFolder="newFolder"></Menu>
             <!-- 支持slideDown slideUp效果的动画 -->
             <transition>
                 @before-enter="beforeEnter" @enter="enter" @after-enter="afterEnter" @before-leave="beforeLeave" @leave="leave" @after-leave="afterLeave">
@@ -44,6 +42,7 @@
     import TreeNode from './TreeNode'
     import Menu from '../Menu'
     import store from '../../store'
+    import TreeOp from '../../util/delete.js'
     import {
         setTimeout,
         setInterval,
@@ -54,16 +53,11 @@
         props: ['data'],
         data() {
             return {
-                count: 0,
                 //记录上一个菜单的坐标是为了右击同一个菜单的时候菜单的位置可以更新
-                lastx: 0,
-                lasty: 0,
                 x: 0,
                 y: 0,
-                currentFileName: '新建文件夹',
-                isShowInput: false,
-                timer: null,
-                currentParent: {},//当前右击节点的父节点
+                currentFileName: '',
+                editingNode: null, //当前正在重命名的node
             }
         },
         components: {
@@ -78,7 +72,17 @@
                 return store.state.currentRightSelectNode
             },
             renaming() {
-                return store.state.renaming
+                let val = store.state.renaming
+                let node = this.editingNode
+                if (!val) {
+                    console.log(node)
+                    // 编辑结束时，要按照名字的字典序把重命名的文件夹的位置替换到合理的位置
+                    if (this.root !== node && node) {
+                        this.avoidSameName(node)
+                        this.findPos(node)
+                    }
+                }
+                return val
             },
             globalClicked() {
                 return store.state.globalClicked
@@ -89,43 +93,43 @@
             isNewFolder() {
                 return store.state.isNewFolder
             },
-            inputDom() {
-                return document.querySelector('.editName') || null
-            },
             isAllSelected() {
                 return store.state.isAllSelected
             },
             root() {
                 return store.state.root
-            }
+            },
+            lastKeyDown() {
+                return store.state.lastKeyDown
+            },
+            currentKeyDown() {
+                return store.state.currentKeyDown
+            },
         },
         methods: {
-            getParent(root, node) {
-                console.log(root, 'root====')
-                // let level = store.state.currentRightSelectNode.level
-                if (root.children) {
-                    for(var i = 0; i < root.children.length; i++) {
-                        if (root.children[i] === node) {
-                           console.log(root, 'find it')
-                           this.currentParent = root
-                        }
-                        this.getParent(root.children[i], node)
+            avoidSameName(node) {
+                let parent = TreeOp.getParent(this.root, node)
+                let children = parent.children
+                children.forEach(item => {
+                    if(item !== node && item.name === node.name) {
+                        node.name += '(1)'
                     }
+                })
+            },
+            findPos(node) {
+                let parent = TreeOp.getParent(this.root, node)
+                let delIndex = parent.children.indexOf(node)
+                parent.children.splice(delIndex, 1)
+                let index = this.getInsertPos(parent, node)
+                if (index) {
+                    parent.children.splice(index, 0, node)
                 }
             },
-            deleteNode() {
-                this.getParent(this.root, this.currentRightSelectNode)
-                let parent = this.currentParent
-                console.log(parent)
-                let index = parent.children.indexOf(this.currentRightSelectNode)
-                parent.children.splice(index, 1)
+            deleteNode(selectType) {
+                TreeOp.deleteNode(selectType)
             },
             focus(node) {
-                if (this.isNewFolder) {
-                    this.currentFileName = '新建文件夹'
-                } else {
-                    this.currentFileName = node.name
-                }
+                this.currentFileName = node.name
                 let dom = document.querySelector('.editName')
                 dom.select()
             },
@@ -141,11 +145,10 @@
                     // store.dispatch('invokeSetIsAllSelectedState', true)
                 }
             },
-            inputMouseupHandle() {},
             isEditing(node) {
                 var val = (node === this.currentRightSelectNode && this.renaming)
-                console.log('!isAllSelected', !this.isAllSelected)
                 if (val) {
+                    this.editingNode = node
                     this.$nextTick(() => {
                         this.selectDom()
                     })
@@ -155,11 +158,11 @@
             isShowMenu(node) {
                 return node === this.currentRightSelectNode && this.hasRightClicked && !this.globalClicked
             },
-            newFolder() {
+            newFile() {
                 let node = this.currentRightSelectNode
                 let newCh = {
                     open: false,
-                    name: '新建文件件',
+                    name: '无标题笔记',
                     level: node.level + 1,
                     checked: false,
                 }
@@ -172,8 +175,70 @@
                 store.dispatch('setCurrentRightSelectNode', newCh)
                 this.$set(node, 'open', true)
             },
+            generateFolderName(node) {
+                //给node的新文件夹起名字,保证不与之前的重复
+                let lastNum = -1
+                console.log(node)
+                if (node.children && node.children.length > 0) {
+                    for (var i = 0; i < node.children.length; i++) {
+                        if (/^新建文件夹/.test(node.children[i].name)) {
+                            let count = node.children[i].name.slice(6, -1)
+                            if (count !== '' && count - lastNum >= 2) {
+                                return '新建文件夹' + `(${parseInt(lastNum) + 1})`
+                            }
+                            lastNum = count === '' ? 0 : count
+                        } else {
+                            //到出现新建文件夹开头之的文件夹都没有缺的序号
+                            return '新建文件夹' + `(${parseInt(lastNum) + 1})`
+                        }
+                    }
+                    //都为新建文件夹的且没有缺的序号的情况
+                    return '新建文件夹' + `(${parseInt(lastNum) + 1})`
+                } else {
+                    //没有子节点
+                    return '新建文件夹'
+                }
+            },
+            generateFileName(node) {
+                //给node的新文件起名字,保证不与之前的重复
+            },
+            getInsertPos(node, newCh) {
+                let chName = newCh.name
+                console.log(chName, 'chName====')
+                if (node.children && node.children.length > 0) {
+                    for (var i = 0; i < node.children.length; i++) {
+                        if (chName < node.children[i].name) {
+                            return i
+                        }
+                    }
+                    node.children.push(newCh)
+                } else {
+                    node.children.push(newCh)
+                }
+            },
+            newFolder() {
+                let node = this.currentRightSelectNode
+                let newCh = {
+                    open: false,
+                    name: '',
+                    level: node.level + 1,
+                    checked: false,
+                    path: '',
+                }
+                newCh.name = this.generateFolderName(node)
+                if (!node.children) {
+                    let children = []
+                    //把node.children加入到vue的响应式系统中，这样以后再push就可以自动响应了
+                    this.$set(node, 'children', children)
+                }
+                let index = this.getInsertPos(node, newCh)
+                if (index) {
+                    node.children.splice(index, 0, newCh)
+                }
+                store.dispatch('setCurrentRightSelectNode', newCh)
+                this.$set(node, 'open', true)
+            },
             rightCilckHandle(node) {
-                console.log(event.currentTarget)
                 if (event.button == 2) {
                     this.x = event.clientX - 25
                     this.y = event.clientY + 5
@@ -185,17 +250,14 @@
                     this.selectHandle(node)
                 }
             },
-            inputClickHandle() {
-                console.log('input内的点击事件')
-            },
             //控制折叠收起的点击，只有点击小箭头才会展开
             foldHandle(node) {
                 store.dispatch('setCurrentNode', node)
+                store.dispatch('invokeSetRenameState', false)
                 this.$set(node, 'open', !node.open)
             },
             //控制选中与否的点击，点击除小箭头以外的点都会选中
             selectHandle(node) {
-                console.log('触发了selectHandle')
                 store.dispatch('invokeSetHasRightClickedState', false)
                 store.dispatch('setCurrentNode', node)
                 //把rename的状态置为false使下次点击重命名才会重新置为true
