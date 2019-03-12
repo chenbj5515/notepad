@@ -12,7 +12,7 @@
                     }" v-if="node.children.length > 0" size="15" type="md-arrow-dropright" />
                 <i class="folderIcon folderIconOpen" color="#797f8d" size="18" v-if="node.children.length > 0 && node.open" type="ios-folder-open"></i>
                 <i class="folderIcon folderIconOutline" size="18" v-if="!node.children || node.children.length === 0 || !node.open" type="ios-folder-outline"></i>
-                <input v-if="isEditing(node)" ref="input" class="editName" v-model="currentFileName" @focus="focus(node)" @blur="blur(node)" @click.stop="" type="text">
+                <input v-if="isEditing(node)" ref="input" class="editName" v-model="node.name" @focus="focus(node)" @blur="blur(node)" @mouseup.stop="" @click.stop="" type="text">
                 <p class="nodeName" v-else> {{ node.name }} </p>
             </div>
             <div v-else @mouseup="rightCilckHandle(node)" class="li-hover-item hasNoChild" :style="{ paddingLeft: ( node.level*15 + 33 ) + 'px' }" :class="{
@@ -20,7 +20,7 @@
                         toBeEdit: hasRightClicked && node === currentRightSelectNode
                     }">
                 <i class="folderIcon folderIconOutline" size="18" type="ios-folder-outline"></i>
-                <input v-if="isEditing(node)" class="editName" v-model="currentFileName" @focus="focus(node)" @blur="blur(node)" @mouseup.stop="" @click.stop="" type="text">
+                <input v-if="isEditing(node)" class="editName" v-model="node.name" @focus="focus(node)" @blur="blur(node)" @mouseup.stop="" @click.stop="" type="text">
                 <p class="nodeName" v-else> {{ node.name }} </p>
             </div>
             <Menu :style="{
@@ -75,11 +75,14 @@
                 let val = store.state.renaming
                 let node = this.editingNode
                 if (!val) {
-                    console.log(node)
+                    console.log(node, 'node====')
                     // 编辑结束时，要按照名字的字典序把重命名的文件夹的位置替换到合理的位置
                     if (this.root !== node && node) {
-                        this.avoidSameName(node)
-                        this.findPos(node)
+                        let parent = TreeOp.getParent(this.root, node)
+                        if(parent) {
+                            this.avoidSameName(node, parent)
+                            this.findPos(node, parent)
+                        }
                     }
                 }
                 return val
@@ -107,8 +110,8 @@
             },
         },
         methods: {
-            avoidSameName(node) {
-                let parent = TreeOp.getParent(this.root, node)
+            avoidSameName(node, parent) {
+                console.log(node, 'av-node====')
                 let children = parent.children
                 children.forEach(item => {
                     if(item !== node && item.name === node.name) {
@@ -116,12 +119,14 @@
                     }
                 })
             },
-            findPos(node) {
-                let parent = TreeOp.getParent(this.root, node)
+            findPos(node, parent) {
                 let delIndex = parent.children.indexOf(node)
                 parent.children.splice(delIndex, 1)
+                console.log(parent, 'parent====')
+                console.log(node, 'node====')
                 let index = this.getInsertPos(parent, node)
-                if (index) {
+                if (index || index === 0) {
+                    console.log(index, 'index====')
                     parent.children.splice(index, 0, node)
                 }
             },
@@ -129,13 +134,13 @@
                 TreeOp.deleteNode(selectType)
             },
             focus(node) {
-                this.currentFileName = node.name
+                // this.currentFileName = node.name
                 let dom = document.querySelector('.editName')
                 dom.select()
             },
             blur(node) {
                 focus.count = false
-                node.name = this.currentFileName
+                // node.name = this.currentFileName
                 store.dispatch('invokeSetIsNewFolderState', false)
             },
             selectDom() {
@@ -177,23 +182,28 @@
             },
             generateFolderName(node) {
                 //给node的新文件夹起名字,保证不与之前的重复
-                let lastNum = -1
+                let lastNum = 0
+                let flag = true
                 console.log(node)
                 if (node.children && node.children.length > 0) {
                     for (var i = 0; i < node.children.length; i++) {
                         if (/^新建文件夹/.test(node.children[i].name)) {
                             let count = node.children[i].name.slice(6, -1)
+                            console.log(count)
+                            //如果第一次匹配到新建文件夹就不是’新建文件夹‘，那么说明却新建文件夹，将其返回
+                            if(flag && count !== '') {
+                                return '新建文件夹'
+                            } 
+                            //如果过了上个return说明有’新建文件夹‘，那么就不再校验这个，flag置为false
+                            flag = false
                             if (count !== '' && count - lastNum >= 2) {
-                                return '新建文件夹' + `(${parseInt(lastNum) + 1})`
+                                return '新建文件夹' + `${parseInt(lastNum) + 1}`
                             }
                             lastNum = count === '' ? 0 : count
-                        } else {
-                            //到出现新建文件夹开头之的文件夹都没有缺的序号
-                            return '新建文件夹' + `(${parseInt(lastNum) + 1})`
                         }
                     }
                     //都为新建文件夹的且没有缺的序号的情况
-                    return '新建文件夹' + `(${parseInt(lastNum) + 1})`
+                    return '新建文件夹' + `${parseInt(lastNum) + 1}`
                 } else {
                     //没有子节点
                     return '新建文件夹'
@@ -202,20 +212,65 @@
             generateFileName(node) {
                 //给node的新文件起名字,保证不与之前的重复
             },
+            // getInsertPos(node, newCh) {
+            //     let chName = newCh.name
+            //     console.log(node.children, '所有的子节点====')
+            //     if (node.children && node.children.length > 0) {
+            //         for (var i = 0; i < node.children.length; i++) {
+            //             console.log(chName, '节点的name')
+            //             console.log(node.children[i].name, '当前的name')
+            //             if (chName < node.children[i].name) {
+            //                 console.log(i, 'return====')
+            //                 return i
+            //             }
+            //         }
+            //         node.children.push(newCh)
+            //         console.log(node.children, 'naa')
+            //     } else {
+            //         node.children.push(newCh)
+            //         console.log(node.children, 'nbb')
+            //     }
+            // },
             getInsertPos(node, newCh) {
                 let chName = newCh.name
-                console.log(chName, 'chName====')
+                let index = 0
                 if (node.children && node.children.length > 0) {
-                    for (var i = 0; i < node.children.length; i++) {
-                        if (chName < node.children[i].name) {
-                            return i
+                    //拿到数字结尾的节点名字中数字之外部分
+                    let num = node.name.match(/\d+$/g)
+                    let name = num ? node.name.slice(0, -num) : name
+                    console.log(num, name)
+                    for (var i = 0; i < node.children.length; i++) {                         
+                        if(node.children[i].name.indexOf(name) > -1) {
+                            //记录最后一个和节点名字前缀相同的孩子的位置
+                            index = i
                         }
                     }
-                    node.children.push(newCh)
+                    if(index === 0) {
+                        //如果children中没有该名字前缀的孩子
+                        node.children.push(newCh)
+                    } else {
+                        return index + 1
+                    }
                 } else {
                     node.children.push(newCh)
                 }
             },
+            // getPosForXJWJJ(node, newCh) {
+            //     let chName = newCh.name
+            //     let num = 0
+            //     if (node.children && node.children.length > 0) {
+            //         for (var i = 0; i < node.children.length; i++) {
+            //             if(/^新建文件夹/.test(node.children[i].name)) {
+            //                 num++
+            //             }
+            //         }
+            //         node.children.push(newCh)
+            //         console.log(node.children, 'naa')
+            //     } else {
+            //         node.children.push(newCh)
+            //         console.log(node.children, 'nbb')
+            //     }
+            // },
             newFolder() {
                 let node = this.currentRightSelectNode
                 let newCh = {
@@ -232,7 +287,8 @@
                     this.$set(node, 'children', children)
                 }
                 let index = this.getInsertPos(node, newCh)
-                if (index) {
+                console.log(index, 'index====')
+                if (index || index === 0) {
                     node.children.splice(index, 0, newCh)
                 }
                 store.dispatch('setCurrentRightSelectNode', newCh)
