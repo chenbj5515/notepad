@@ -12,10 +12,9 @@
             </div>
             <!-- <MenuNew  class="menu-new"></MenuNew> -->
         </div>
-        <div class="menuItem" @click.stop="renameClickHandle">重命名</div>
-        <div class="menuItem" @click="deleteClickHandle">删除</div>
-        <div class="menuItem">设置密码</div>
-        
+        <div v-if="!isRoot" class="menuItem" @click.stop="renameClickHandle">重命名</div>
+        <div v-if="!isRoot" class="menuItem" @click="deleteClickHandle">删除</div>
+        <div v-if="!isRoot" class="menuItem">设置密码</div>
     </div>
 </template>
 
@@ -31,6 +30,9 @@
             currentRightSelectNode() {
                 return store.state.currentRightSelectNode
             },
+            isRoot() {
+                return store.state.currentRightSelectNode.path === '我的文件夹'
+            }
         },
         methods: {
             renameClickHandle() {
@@ -41,7 +43,7 @@
                 store.dispatch('invokeSetGlobalClickedState', true)
                 //点击重命名时会清除右击选中状态
                 store.dispatch('invokeSetHasRightClickedState', false)
-                store.dispatch('invokeSetNameBeforeEdit', this.currentRightSelectNode.name)
+                store.dispatch('invokeSetNameBeforeEdit', this.currentRightSelectNode.path)
             },
             bindSelectEventListener() {
                 this.$nextTick(() => {
@@ -54,7 +56,8 @@
                 })
             },
             newFileClickHandle() {
-
+                this.$emit('newFile')   
+                store.dispatch('invokeSetHasRightClickedState', false)      
             },
             folderMouseupHandle() {
 
@@ -76,8 +79,9 @@
 <style lang="less" scoped>
     .menu {
         width: 72px;
-        height: 115px;
+        // height: 115px;
         margin-left: 30px;
+        // padding-bottom: 16px;
         box-shadow: #666 0px 0px 3px;
         font-size: 13px;
         text-align: left;
@@ -88,12 +92,11 @@
         border-radius: 4%;
         .menuItem {
             height: 22px;
-            margin-top: 16px;
             padding-left: 10px;
             width: 100%;
             line-height: 24px;
             margin-top: 5px;
-            margin-bottom: 2px;
+            margin-bottom: 5px;
             .arrow-right {
                 margin-left: 12px;
                 margin-top: -4px;

@@ -10,6 +10,7 @@
   import TreeOp from '../../util/delete'
   import TreeNode from './TreeNode'
   import store from '../../store'
+  import {ipcRenderer} from 'electron'
   export default {
     name: 'Tree',
     props: ['data'],
@@ -41,6 +42,8 @@
           store.dispatch('invokeSetLastKeyDown', event.code)
         }
         if (this.lastKeyDown === 'MetaLeft' && this.currentKeyDown === 'Backspace') {
+          console.log(this.currentNode.path, 'deletePath====')
+          ipcRenderer.send('delete', this.currentNode.path)
           TreeOp.deleteNode('left')
         }
       })

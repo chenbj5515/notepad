@@ -64,19 +64,47 @@ fs.mkdir(str, { recursive: true }, (err) => {
   // if (err) throw err;
 });
 
+//删除所有子文件/文件夹
+deleteFolderRecursive('我的文件夹', true)
+
 //监听与渲染进程的通信
 ipcMain.on('generateFolder',function(event, arg){
-  console.log(arg)
   fs.mkdir(arg, { recursive: false }, (err) => {
     console.log(err)
   });
 })
 
+
 ipcMain.on('rename',function(event, arg) {
-  fs.rename(arg.oldPath, arg.newPath, (err) => {
-    console.log(err)
+  let obj = JSON.parse(arg)
+  fs.rename(obj.oldPath, obj.newPath, (err) => {
   })
-}
+})
+
+ipcMain.on('delete',function(event, arg) {
+  console.log(arg)
+  deleteFolderRecursive(arg)
+})
+
+function deleteFolderRecursive(path, remainSelf) {
+  if( fs.existsSync(path) ) {
+    fs.readdirSync(path).forEach(function(file) {
+      var curPath = path + "/" + file;
+      if(fs.statSync(curPath).isDirectory()) { // recurse
+        deleteFolderRecursive(curPath);
+      } else { // delete file
+        fs.unlinkSync(curPath);
+      }
+    });
+    if(!remainSelf) {
+      fs.rmdirSync(path);
+    }
+  }
+};
+// deleteFolderRecursive('我的文件夹/新建文件夹')
+// fs.rmdir('我的文件夹/新建文件夹', err => {
+//   console.log(err)
+// })
 // ipcMain.on('createFile',function(){
 //   mainWindow.minimize();
 // })

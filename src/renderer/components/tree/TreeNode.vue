@@ -26,7 +26,7 @@
             <Menu :style="{
                     left: x + 'px',
                     top: y + 'px'   
-                }" class="menu" v-if="isShowMenu(node)" :x='x' :y='y' @deleteNode="deleteNode('right')" @newFolder="newFolder"></Menu>
+                }" class="menu" v-if="isShowMenu(node)" :x='x' :y='y' @deleteNode="deleteNode('right')" @newFolder="newFolder" @newFile="newFile"></Menu>
             <!-- 支持slideDown slideUp效果的动画 -->
             <transition>
                 @before-enter="beforeEnter" @enter="enter" @after-enter="afterEnter" @before-leave="beforeLeave" @leave="leave" @after-leave="afterLeave">
@@ -83,13 +83,13 @@
                         if(parent) {
                             console.log(this.isNewFolder, 'isNewFolder')
                             if(this.isNewFolder) {
-                                this.avoidSameName(node, parent)
-                                this.insertNode(node, parent)
+                                //如果是新建文件的话对应的是node的mkdir操作
                                 console.log(`${node.name}`)
                                 node.path = `${parent.path}/${node.name}`
                                 console.log(node.path)
                                 ipcRenderer.send('generateFolder', node.path)
                             } else {
+                                //如果是重命名则对应的是rename操作
                                 let pos = node.path.lastIndexOf('/')
                                 let folderName = node.path.slice(pos + 1)
                                 let newPath = node.path.replace(folderName, node.name)
@@ -97,11 +97,13 @@
                                     oldPath: node.path,
                                     newPath
                                 }
-                                ipcRenderer.send('rename', obj)
+                                console.log(obj, 'obj====')
+                                ipcRenderer.send('rename', JSON.stringify(obj))
                             }
-                           
+                            //无论是新建还是重命名都需要避免重复命名并且重排位置
+                            this.avoidSameName(node, parent)
+                            this.insertNode(node, parent)
                         } 
-                       
                     }
                 }
                 return val
@@ -141,6 +143,7 @@
                 let delIndex = parent.children.indexOf(node)
                 parent.children.splice(delIndex, 1)
                 let index = this.getInsertPos(parent, node)
+                console.log(index, 'index====')
                 if (index || index === 0) {
                     console.log(index, 'index====')
                     parent.children.splice(index, 0, node)
@@ -148,6 +151,8 @@
             },
             deleteNode(selectType) {
                 TreeOp.deleteNode(selectType)
+                console.log(this.currentRightSelectNode.path, 'deletePath====')
+                ipcRenderer.send('delete', this.currentRightSelectNode.path)
             },
             focus(node) {
                 // this.currentFileName = node.name
@@ -248,10 +253,13 @@
                         if(currentChildNum && currentChildNum !== currentChild.name) {
                             currentChildName = currentChild.name.slice(0, -currentChildNum.length)
                         }  
+                        //如果有相同前缀的，则返回合理位置
                         if(name === currentChildName) {
-                            if(parseInt(num) < parseInt(currentChildNum)) {
+                            if(!num || parseInt(num) < parseInt(currentChildNum)) {
+                                //发现满足外层条件且没有数字后缀则直接返回，如果有的话就需要找大于这个数字的节点
                                 return i
                             } else {
+                                //如果找到同前缀的但是不满足返回条件，则记录有前缀这个信息，并且记录当前的位置，最后插入到同前缀的所有节点的最后
                                 hasSiblings = true
                                 index = i
                             } 
@@ -314,6 +322,9 @@
 
                 store.dispatch('setCurrentRightSelectNode', newCh)
                 this.$set(node, 'open', true)
+            },
+            newFile() {
+                
             },
             rightCilckHandle(node) {
                 if (event.button == 2) {
