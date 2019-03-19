@@ -43,6 +43,7 @@
     import Menu from '../Menu'
     import store from '../../store'
     import TreeOp from '../../util/delete.js'
+    import {ipcRenderer } from 'electron'
     import {
         setTimeout,
         setInterval,
@@ -75,14 +76,32 @@
                 let val = store.state.renaming
                 let node = this.editingNode
                 if (!val) {
-                    console.log(node, 'node====')
+                    console.log(node, 'node===')
                     // 编辑结束时，要按照名字的字典序把重命名的文件夹的位置替换到合理的位置
                     if (this.root !== node && node) {
                         let parent = TreeOp.getParent(this.root, node)
                         if(parent) {
-                            this.avoidSameName(node, parent)
-                            this.findPos(node, parent)
-                        }
+                            console.log(this.isNewFolder, 'isNewFolder')
+                            if(this.isNewFolder) {
+                                this.avoidSameName(node, parent)
+                                this.insertNode(node, parent)
+                                console.log(`${node.name}`)
+                                node.path = `${parent.path}/${node.name}`
+                                console.log(node.path)
+                                ipcRenderer.send('generateFolder', node.path)
+                            } else {
+                                let pos = node.path.lastIndexOf('/')
+                                let folderName = node.path.slice(pos + 1)
+                                let newPath = node.path.replace(folderName, node.name)
+                                let obj = {
+                                    oldPath: node.path,
+                                    newPath
+                                }
+                                ipcRenderer.send('rename', obj)
+                            }
+                           
+                        } 
+                       
                     }
                 }
                 return val
@@ -111,7 +130,6 @@
         },
         methods: {
             avoidSameName(node, parent) {
-                console.log(node, 'av-node====')
                 let children = parent.children
                 children.forEach(item => {
                     if(item !== node && item.name === node.name) {
@@ -119,11 +137,9 @@
                     }
                 })
             },
-            findPos(node, parent) {
+            insertNode(node, parent) {
                 let delIndex = parent.children.indexOf(node)
                 parent.children.splice(delIndex, 1)
-                console.log(parent, 'parent====')
-                console.log(node, 'node====')
                 let index = this.getInsertPos(parent, node)
                 if (index || index === 0) {
                     console.log(index, 'index====')
@@ -184,22 +200,20 @@
                 //给node的新文件夹起名字,保证不与之前的重复
                 let lastNum = 0
                 let flag = true
-                console.log(node)
                 if (node.children && node.children.length > 0) {
                     for (var i = 0; i < node.children.length; i++) {
                         if (/^新建文件夹/.test(node.children[i].name)) {
-                            let count = node.children[i].name.slice(6, -1)
-                            console.log(count)
+                            let count = node.children[i].name.match(/(\d+)$/g)
                             //如果第一次匹配到新建文件夹就不是’新建文件夹‘，那么说明却新建文件夹，将其返回
-                            if(flag && count !== '') {
+                            if(flag && count) {
                                 return '新建文件夹'
                             } 
                             //如果过了上个return说明有’新建文件夹‘，那么就不再校验这个，flag置为false
                             flag = false
-                            if (count !== '' && count - lastNum >= 2) {
+                            if (count && count - lastNum >= 2) {
                                 return '新建文件夹' + `${parseInt(lastNum) + 1}`
                             }
-                            lastNum = count === '' ? 0 : count
+                            lastNum = !count ? 0 : count
                         }
                     }
                     //都为新建文件夹的且没有缺的序号的情况
@@ -212,37 +226,59 @@
             generateFileName(node) {
                 //给node的新文件起名字,保证不与之前的重复
             },
-            // getInsertPos(node, newCh) {
-            //     let chName = newCh.name
-            //     console.log(node.children, '所有的子节点====')
-            //     if (node.children && node.children.length > 0) {
-            //         for (var i = 0; i < node.children.length; i++) {
-            //             console.log(chName, '节点的name')
-            //             console.log(node.children[i].name, '当前的name')
-            //             if (chName < node.children[i].name) {
-            //                 console.log(i, 'return====')
-            //                 return i
-            //             }
-            //         }
-            //         node.children.push(newCh)
-            //         console.log(node.children, 'naa')
-            //     } else {
-            //         node.children.push(newCh)
-            //         console.log(node.children, 'nbb')
-            //     }
-            // },
             getInsertPos(node, newCh) {
                 let chName = newCh.name
                 let index = 0
+                let hasSiblings = false
                 if (node.children && node.children.length > 0) {
-                    //拿到数字结尾的节点名字中数字之外部分
-                    let num = node.name.match(/\d+$/g)
-                    let name = num ? node.name.slice(0, -num) : name
-                    console.log(num, name)
-                    for (var i = 0; i < node.children.length; i++) {                         
-                        if(node.children[i].name.indexOf(name) > -1) {
-                            //记录最后一个和节点名字前缀相同的孩子的位置
+                    //name为数字结尾的节点名字中数字之外部分
+                    let reg = /\d+$/g
+                    let reg1 = /^[0-9]+$/
+                    let num = chName.match(reg) && chName.match(reg)[0] 
+                    if(num && chName !== num) {
+                        name = newCh.name.slice(0, -num.length)
+                    } else {
+                        name = chName
+                    }
+                    for (var i = 0; i < node.children.length; i++) {   
+                        let currentChild = node.children[i]
+                        let currentChildNum = currentChild.name.match(reg) && currentChild.name.match(reg)[0]
+                        //如果是以数字结尾并且不是一个数字则对名字截取数字以外部分，否则不操作
+                        let currentChildName = currentChild.name
+                        if(currentChildNum && currentChildNum !== currentChild.name) {
+                            currentChildName = currentChild.name.slice(0, -currentChildNum.length)
+                        }  
+                        if(name === currentChildName) {
+                            if(parseInt(num) < parseInt(currentChildNum)) {
+                                return i
+                            } else {
+                                hasSiblings = true
+                                index = i
+                            } 
+                        }
+                        if((num === chName && currentChildNum === currentChild.name)) {
+                            //如果都是数字的话，那么看是不是小于当前的，如果是插入到之前就好，直接return。如果不是，记录当前的位置，遍历结束后插入到节点之后
+                            if(parseInt(num) < parseInt(currentChildNum)) {
+                                return i
+                            }
                             index = i
+                        }
+                    }
+                    if(hasSiblings) {
+                        console.log('return的值')
+                        return index + 1
+                    } 
+                    //如果遍历结束也没有找到比要被安排位置的节点大的节点，那么插入到最大的后面
+                    if(index) {
+                        return index + 1
+                    }
+                    //如果一直没有找到相同前缀的，则按照字典序排
+                    for (var i = 0; i < node.children.length; i++) {
+                        let currentChild = node.children[i]
+                        console.log(chName, 'chName===')
+                        console.log(currentChild.name, 'currentChild.name===')
+                        if(chName < currentChild.name) {
+                            return i
                         }
                     }
                     if(index === 0) {
@@ -255,22 +291,6 @@
                     node.children.push(newCh)
                 }
             },
-            // getPosForXJWJJ(node, newCh) {
-            //     let chName = newCh.name
-            //     let num = 0
-            //     if (node.children && node.children.length > 0) {
-            //         for (var i = 0; i < node.children.length; i++) {
-            //             if(/^新建文件夹/.test(node.children[i].name)) {
-            //                 num++
-            //             }
-            //         }
-            //         node.children.push(newCh)
-            //         console.log(node.children, 'naa')
-            //     } else {
-            //         node.children.push(newCh)
-            //         console.log(node.children, 'nbb')
-            //     }
-            // },
             newFolder() {
                 let node = this.currentRightSelectNode
                 let newCh = {
@@ -291,6 +311,7 @@
                 if (index || index === 0) {
                     node.children.splice(index, 0, newCh)
                 }
+
                 store.dispatch('setCurrentRightSelectNode', newCh)
                 this.$set(node, 'open', true)
             },

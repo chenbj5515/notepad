@@ -27,6 +27,11 @@
             return {
             }
         },
+        computed: {
+            currentRightSelectNode() {
+                return store.state.currentRightSelectNode
+            },
+        },
         methods: {
             renameClickHandle() {
                 //rename触发input的显示
@@ -36,6 +41,7 @@
                 store.dispatch('invokeSetGlobalClickedState', true)
                 //点击重命名时会清除右击选中状态
                 store.dispatch('invokeSetHasRightClickedState', false)
+                store.dispatch('invokeSetNameBeforeEdit', this.currentRightSelectNode.name)
             },
             bindSelectEventListener() {
                 this.$nextTick(() => {

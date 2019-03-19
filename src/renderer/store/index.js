@@ -29,11 +29,9 @@ const state = {
   lastKeyDown: '',
   //记录当前按下的按键
   currentKeyDown: '',
+  nameBeforeEdit: '',
 }
 const getters = {
-  getCurrentNode(state) {
-    return state.currentNode
-  }
 }
 
 const mutations = {
@@ -87,8 +85,10 @@ const mutations = {
   },
   setCurrentKeyDown(state, val) {
     Vue.set(state, 'currentKeyDown', val)
+  },
+  setNameBeforeEdit(state, val) {
+    Vue.set(state, 'nameBeforeEdit', val)
   }
-
 }
 
 const actions = {
@@ -130,6 +130,9 @@ const actions = {
   },
   invokeSetCurrentKeyDown(context, val) {
     context.commit('setCurrentKeyDown', val)
+  },
+  invokeSetNameBeforeEdit(context, val) {
+    context.commit('setNameBeforeEdit', val)
   }
 }
 

@@ -58,16 +58,25 @@ app.on('activate', () => {
   }
 })
 
-var str = '我是你哥哥/我们都是你妈的儿子'
+var str = '我的文件夹'
 
 fs.mkdir(str, { recursive: true }, (err) => {
   // if (err) throw err;
 });
 
 //监听与渲染进程的通信
-// ipcMain.on('createFold',function(event, arg){
-//   console.log()
-// })
+ipcMain.on('generateFolder',function(event, arg){
+  console.log(arg)
+  fs.mkdir(arg, { recursive: false }, (err) => {
+    console.log(err)
+  });
+})
+
+ipcMain.on('rename',function(event, arg) {
+  fs.rename(arg.oldPath, arg.newPath, (err) => {
+    console.log(err)
+  })
+}
 // ipcMain.on('createFile',function(){
 //   mainWindow.minimize();
 // })

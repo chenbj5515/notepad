@@ -38,32 +38,7 @@
           name: '我的文件夹',
           level: 0,
           checked: true,
-          path: '我的文件夹/',
-          // children: [{
-          //     open: false,
-          //     name: '新节点1',
-          //     level: 1,
-          //     checked: true,
-          //   },
-          //   {
-          //     open: false,
-          //     name: '新节点2',
-          //     level: 1,
-          //     checked: true,
-          //   },
-          //   {
-          //     open: false,
-          //     name: '新节点3',
-          //     level: 1,
-          //     checked: true,
-          //   },
-          //   {
-          //     open: false,
-          //     name: '新节点4',
-          //     level: 1,
-          //     checked: true,
-          //   }
-          // ]
+          path: '我的文件夹',
         }],
         isClick: false,
         hasRightClicked: false,
