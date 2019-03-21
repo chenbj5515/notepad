@@ -1,39 +1,41 @@
 <template>
     <div class="container">
-        <li :class="['node']" v-for="node in data" :key='node.index' v-if="node.type === 1">
-            <div v-if="hasFolderChild(node)" @mouseup="rightCilckHandle(node)" :class="{
-                        isSelected: node.isSelect && node === currentNode,
-                        toBeEdit: hasRightClicked && node === currentRightSelectNode
-                    }" class="li-hover-item hasChild" :style="{ paddingLeft: ( node.level*15 + 33 ) + 'px' }">
-                <Icon class="arrow" color="#909090" @click.stop="foldHandle(node)" :style="{
-                        left: node.level*15 + 12 + 'px'
-                    }" :class="{
-                        rotated: node.open
-                    }" v-if="node.children.length > 0" size="15" type="md-arrow-dropright" />
-                <i class="folderIcon folderIconOpen" color="#797f8d" size="18" v-if="node.children.length > 0 && node.open" type="ios-folder-open"></i>
-                <i class="folderIcon folderIconOutline" size="18" v-if="!node.children || node.children.length === 0 || !node.open" type="ios-folder-outline"></i>
-                <input v-if="isEditing(node)" ref="input" class="editName" v-model="node.name" @focus="focus(node)" @blur="blur(node)" @mouseup.stop="" @click.stop="" type="text">
-                <p class="nodeName" v-else> {{ node.name }} </p>
+        <li :class="['node']" v-for="node in data" :key='node.index'>
+            <div v-if="node.type === 1">
+                <div v-if="hasFolderChild(node)" @mouseup="rightCilckHandle(node)" :class="{
+                            isSelected: node.isSelect && node === currentNode,
+                            toBeEdit: hasRightClicked && node === currentRightSelectNode
+                        }" class="li-hover-item hasChild" :style="{ paddingLeft: ( node.level*15 + 33 ) + 'px' }">
+                    <Icon class="arrow" color="#909090" @click.stop="foldHandle(node)" :style="{
+                            left: node.level*15 + 12 + 'px'
+                        }" :class="{
+                            rotated: node.open
+                        }" v-if="node.children.length > 0" size="15" type="md-arrow-dropright" />
+                    <i class="folderIcon folderIconOpen" color="#797f8d" size="18" v-if="node.children.length > 0 && node.open" type="ios-folder-open"></i>
+                    <i class="folderIcon folderIconOutline" size="18" v-if="!node.children || node.children.length === 0 || !node.open" type="ios-folder-outline"></i>
+                    <input v-if="isEditing(node)" ref="input" class="editName" v-model="node.name" @focus="focus(node)" @blur="blur(node)" @mouseup.stop="" @click.stop="" type="text">
+                    <p class="nodeName" v-else> {{ node.name }} </p>
+                </div>
+                <div v-else @mouseup="rightCilckHandle(node)" class="li-hover-item hasNoChild" :style="{ paddingLeft: ( node.level*15 + 33 ) + 'px' }" :class="{
+                            isSelected: node.isSelect && node === currentNode,
+                            toBeEdit: hasRightClicked && node === currentRightSelectNode
+                        }">
+                    <i class="folderIcon folderIconOutline" size="18" type="ios-folder-outline"></i>
+                    <input v-if="isEditing(node)" class="editName" v-model="node.name" @focus="focus(node)" @blur="blur(node)" @mouseup.stop="" @click.stop="" type="text">
+                    <p class="nodeName" v-else> {{ node.name }} </p>
+                </div>
+                <Menu :style="{
+                        left: x + 'px',
+                        top: y + 'px'   
+                    }" class="menu" v-if="isShowMenu(node)" :x='x' :y='y' @deleteNode="deleteNode('right')" @newFolder="newFolder" @newFile="newFile"></Menu>
+                <!-- 支持slideDown slideUp效果的动画 -->
+                <transition>
+                    @before-enter="beforeEnter" @enter="enter" @after-enter="afterEnter" @before-leave="beforeLeave" @leave="leave" @after-leave="afterLeave">
+                    <ul v-if="node.children" v-show="node.open">
+                        <TreeNode :data="node.children"></TreeNode>
+                    </ul>
+                </transition>
             </div>
-            <div v-else @mouseup="rightCilckHandle(node)" class="li-hover-item hasNoChild" :style="{ paddingLeft: ( node.level*15 + 33 ) + 'px' }" :class="{
-                        isSelected: node.isSelect && node === currentNode,
-                        toBeEdit: hasRightClicked && node === currentRightSelectNode
-                    }">
-                <i class="folderIcon folderIconOutline" size="18" type="ios-folder-outline"></i>
-                <input v-if="isEditing(node)" class="editName" v-model="node.name" @focus="focus(node)" @blur="blur(node)" @mouseup.stop="" @click.stop="" type="text">
-                <p class="nodeName" v-else> {{ node.name }} </p>
-            </div>
-            <Menu :style="{
-                    left: x + 'px',
-                    top: y + 'px'   
-                }" class="menu" v-if="isShowMenu(node)" :x='x' :y='y' @deleteNode="deleteNode('right')" @newFolder="newFolder" @newFile="newFile"></Menu>
-            <!-- 支持slideDown slideUp效果的动画 -->
-            <transition>
-                @before-enter="beforeEnter" @enter="enter" @after-enter="afterEnter" @before-leave="beforeLeave" @leave="leave" @after-leave="afterLeave">
-                <ul v-if="node.children" v-show="node.open">
-                    <TreeNode :data="node.children"></TreeNode>
-                </ul>
-            </transition>
         </li>
     </div>
 </template>
@@ -43,7 +45,9 @@
     import Menu from '../Menu'
     import store from '../../store'
     import TreeOp from '../../util/delete.js'
-    import {ipcRenderer } from 'electron'
+    import {
+        ipcRenderer
+    } from 'electron'
     import {
         setTimeout,
         setInterval,
@@ -80,9 +84,9 @@
                     // 编辑结束时，要按照名字的字典序把重命名的文件夹的位置替换到合理的位置
                     if (this.root !== node && node) {
                         let parent = TreeOp.getParent(this.root, node)
-                        if(parent) {
+                        if (parent) {
                             console.log(this.isNewFolder, 'isNewFolder')
-                            if(this.isNewFolder) {
+                            if (this.isNewFolder) {
                                 //如果是新建文件的话对应的是node的mkdir操作
                                 console.log(`${node.name}`)
                                 node.path = `${parent.path}/${node.name}`
@@ -103,7 +107,7 @@
                             //无论是新建还是重命名都需要避免重复命名并且重排位置
                             this.avoidSameName(node, parent)
                             this.insertNode(node, parent)
-                        } 
+                        }
                     }
                 }
                 return val
@@ -134,9 +138,9 @@
             hasFolderChild(node) {
                 //判断是否有类型为文件夹的子节点
                 let num = 0
-                if(node.children && node.children.length > 0) {
+                if (node.children && node.children.length > 0) {
                     node.children.forEach(item => {
-                        if(item.type === 1) {
+                        if (item.type === 1) {
                             num++
                         }
                     })
@@ -146,7 +150,7 @@
             avoidSameName(node, parent) {
                 let children = parent.children
                 children.forEach(item => {
-                    if(item !== node && item.name === node.name) {
+                    if (item !== node && item.name === node.name) {
                         node.name += '(1)'
                     }
                 })
@@ -222,12 +226,12 @@
                         if (/^无标题笔记/.test(node.children[i].name)) {
                             hasSiblings = true
                             let count = node.children[i].name.match(/(\d+)$/g)
-                            if( count) {
+                            if (count) {
                                 return `无标题笔记${parseInt(count) + 1}`
                             }
                         }
                     }
-                    if(hasSiblings) {
+                    if (hasSiblings) {
                         return '无标题笔记1'
                     }
                 }
@@ -242,9 +246,9 @@
                         if (/^新建文件夹/.test(node.children[i].name)) {
                             let count = node.children[i].name.match(/(\d+)$/g)
                             //如果第一次匹配到新建文件夹就不是’新建文件夹‘，那么说明却新建文件夹，将其返回
-                            if(flag && count) {
+                            if (flag && count) {
                                 return '新建文件夹'
-                            } 
+                            }
                             //如果过了上个return说明有’新建文件夹‘，那么就不再校验这个，flag置为false
                             flag = false
                             if (count && count - lastNum >= 2) {
@@ -268,45 +272,45 @@
                     //name为数字结尾的节点名字中数字之外部分
                     let reg = /\d+$/g
                     let reg1 = /^[0-9]+$/
-                    let num = chName.match(reg) && chName.match(reg)[0] 
-                    if(num && chName !== num) {
+                    let num = chName.match(reg) && chName.match(reg)[0]
+                    if (num && chName !== num) {
                         name = newCh.name.slice(0, -num.length)
                     } else {
                         name = chName
                     }
-                    for (var i = 0; i < node.children.length; i++) {   
+                    for (var i = 0; i < node.children.length; i++) {
                         let currentChild = node.children[i]
                         let currentChildNum = currentChild.name.match(reg) && currentChild.name.match(reg)[0]
                         //如果是以数字结尾并且不是一个数字则对名字截取数字以外部分，否则不操作
                         let currentChildName = currentChild.name
-                        if(currentChildNum && currentChildNum !== currentChild.name) {
+                        if (currentChildNum && currentChildNum !== currentChild.name) {
                             currentChildName = currentChild.name.slice(0, -currentChildNum.length)
-                        }  
+                        }
                         //如果有相同前缀的，则返回合理位置
-                        if(name === currentChildName) {
-                            if(!num || parseInt(num) < parseInt(currentChildNum)) {
+                        if (name === currentChildName) {
+                            if (!num || parseInt(num) < parseInt(currentChildNum)) {
                                 //发现满足外层条件且没有数字后缀则直接返回，如果有的话就需要找大于这个数字的节点
                                 return i
                             } else {
                                 //如果找到同前缀的但是不满足返回条件，则记录有前缀这个信息，并且记录当前的位置，最后插入到同前缀的所有节点的最后
                                 hasSiblings = true
                                 index = i
-                            } 
+                            }
                         }
-                        if((num === chName && currentChildNum === currentChild.name)) {
+                        if ((num === chName && currentChildNum === currentChild.name)) {
                             //如果都是数字的话，那么看是不是小于当前的，如果是插入到之前就好，直接return。如果不是，记录当前的位置，遍历结束后插入到节点之后
-                            if(parseInt(num) < parseInt(currentChildNum)) {
+                            if (parseInt(num) < parseInt(currentChildNum)) {
                                 return i
                             }
                             index = i
                         }
                     }
-                    if(hasSiblings) {
+                    if (hasSiblings) {
                         console.log('return的值')
                         return index + 1
-                    } 
+                    }
                     //如果遍历结束也没有找到比要被安排位置的节点大的节点，那么插入到最大的后面
-                    if(index) {
+                    if (index) {
                         return index + 1
                     }
                     //如果一直没有找到相同前缀的，则按照字典序排
@@ -314,11 +318,11 @@
                         let currentChild = node.children[i]
                         console.log(chName, 'chName===')
                         console.log(currentChild.name, 'currentChild.name===')
-                        if(chName < currentChild.name) {
+                        if (chName < currentChild.name) {
                             return i
                         }
                     }
-                    if(index === 0) {
+                    if (index === 0) {
                         //如果children中没有该名字前缀的孩子
                         node.children.push(newCh)
                     } else {
@@ -349,7 +353,6 @@
                 if (index || index === 0) {
                     node.children.splice(index, 0, newCh)
                 }
-
                 store.dispatch('setCurrentRightSelectNode', newCh)
                 this.$set(node, 'open', true)
             },
@@ -468,8 +471,7 @@
     }
     .isSelected {
         background: #f0f0f2;
-    }
-    // .li-hover-item {
+    } // .li-hover-item {
     //     z-index: 999999999 !important;
     //     position: absolute;
     // }
@@ -492,8 +494,7 @@
         .li-hover-item {
             position: relative;
             width: 218px;
-            height: 40px;
-            // background: #f0f0f2;
+            height: 40px; // background: #f0f0f2;
             // z-index: 9999999999;
             // background: #79ace7;
             line-height: 40px; // padding-left: 100px; 
