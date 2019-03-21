@@ -1,7 +1,7 @@
 <template>
     <div class="container">
-        <li :class="['node']" v-for="node in data" :key='node.index'>
-            <div v-if="node.children && node.children.length > 0" @mouseup="rightCilckHandle(node)" :class="{
+        <li :class="['node']" v-for="node in data" :key='node.index' v-if="node.type === 1">
+            <div v-if="hasFolderChild(node)" @mouseup="rightCilckHandle(node)" :class="{
                         isSelected: node.isSelect && node === currentNode,
                         toBeEdit: hasRightClicked && node === currentRightSelectNode
                     }" class="li-hover-item hasChild" :style="{ paddingLeft: ( node.level*15 + 33 ) + 'px' }">
@@ -131,6 +131,18 @@
             },
         },
         methods: {
+            hasFolderChild(node) {
+                //判断是否有类型为文件夹的子节点
+                let num = 0
+                if(node.children && node.children.length > 0) {
+                    node.children.forEach(item => {
+                        if(item.type === 1) {
+                            num++
+                        }
+                    })
+                }
+                return num === 0 ? false : true
+            },
             avoidSameName(node, parent) {
                 let children = parent.children
                 children.forEach(item => {
@@ -191,15 +203,35 @@
                     name: '无标题笔记',
                     level: node.level + 1,
                     checked: false,
+                    type: 2,
                 }
                 if (!node.children) {
                     let children = []
                     //把node.children加入到vue的响应式系统中，这样以后再push就可以自动响应了
                     this.$set(node, 'children', children)
                 }
-                node.children.push(newCh)
-                store.dispatch('setCurrentRightSelectNode', newCh)
-                this.$set(node, 'open', true)
+                newCh.name = this.generateFileName(node)
+                node.children.unshift(newCh)
+                console.log(node.children)
+            },
+            generateFileName(node) {
+                if (node.children && node.children.length > 0) {
+                    let num = 0
+                    let hasSiblings = false
+                    for (var i = 0; i < node.children.length; i++) {
+                        if (/^无标题笔记/.test(node.children[i].name)) {
+                            hasSiblings = true
+                            let count = node.children[i].name.match(/(\d+)$/g)
+                            if( count) {
+                                return `无标题笔记${parseInt(count) + 1}`
+                            }
+                        }
+                    }
+                    if(hasSiblings) {
+                        return '无标题笔记1'
+                    }
+                }
+                return '无标题笔记'
             },
             generateFolderName(node) {
                 //给node的新文件夹起名字,保证不与之前的重复
@@ -227,9 +259,6 @@
                     //没有子节点
                     return '新建文件夹'
                 }
-            },
-            generateFileName(node) {
-                //给node的新文件起名字,保证不与之前的重复
             },
             getInsertPos(node, newCh) {
                 let chName = newCh.name
@@ -306,6 +335,7 @@
                     name: '',
                     level: node.level + 1,
                     checked: false,
+                    type: 1,
                     path: '',
                 }
                 newCh.name = this.generateFolderName(node)
@@ -322,9 +352,6 @@
 
                 store.dispatch('setCurrentRightSelectNode', newCh)
                 this.$set(node, 'open', true)
-            },
-            newFile() {
-                
             },
             rightCilckHandle(node) {
                 if (event.button == 2) {

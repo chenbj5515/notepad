@@ -2,7 +2,7 @@ import store from '../store'
 import Vue from 'vue'
 var vm = new Vue()
 var getParent = function(root, node) {
-    if (root.children) {
+    if ( root.children) {
         for (var i = 0; i < root.children.length; i++) {
             if (root.children[i] === node) {
                 return root

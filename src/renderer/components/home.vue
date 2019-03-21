@@ -8,18 +8,20 @@
     </header>
     <center class="container">
       <div class="folders">
-        <Tree :data="treeData" />
+        <Tree :data="treeData"/>
         <div class="bin" :class="{
-                isSelected: isSelected,
-                toBeEdit: isToBeEdit
-              }" @click="binClickHandle" @mouseup="rightCilckHandle()">
+              isSelected: isSelected,
+              toBeEdit: isToBeEdit
+            }" @click="binClickHandle" @mouseup="rightCilckHandle()">
           <i class="binIcon"></i>
           <span>回收站</span>
         </div>
       </div>
       <div class="partLine1"></div>
       <div class="files">
-        <div class="fixed"></div>
+        <div v-for="item in currentFiles" :key="item.name">
+          <div class="file">{{ item.name }}</div>
+        </div>
       </div>
       <div class="partLine2"></div>
       <div class="fileContent">
@@ -37,119 +39,13 @@
   export default {
     data() {
       return {
-        // scrollTrackStyle: {
-        //   backgroundColor: 'transparent',
-        // },
-        // scrollBarStyle: {},
         treeData: [{
           open: true,
           name: '我的文件夹',
           level: 0,
+          type: 1,
           checked: true,
           path: '我的文件夹',
-          children: [{
-            open: true,
-            name: '我的文件夹',
-            level: 1,
-            checked: true,
-            path: '我的文件夹',
-          }, {
-            open: true,
-            name: '我的文件夹',
-            level: 1,
-            checked: true,
-            path: '我的文件夹',
-          }, {
-            open: true,
-            name: '我的文件夹',
-            level: 1,
-            checked: true,
-            path: '我的文件夹',
-          }, {
-            open: true,
-            name: '我的文件夹',
-            level: 1,
-            checked: true,
-            path: '我的文件夹',
-          }, {
-            open: true,
-            name: '我的文件夹',
-            level: 1,
-            checked: true,
-            path: '我的文件夹',
-          }, {
-            open: true,
-            name: '我的文件夹',
-            level: 1,
-            checked: true,
-            path: '我的文件夹',
-          }, {
-            open: true,
-            name: '我的文件夹',
-            level: 1,
-            checked: true,
-            path: '我的文件夹',
-          }, {
-            open: true,
-            name: '我的文件夹',
-            level: 1,
-            checked: true,
-            path: '我的文件夹',
-          }, {
-            open: true,
-            name: '我的文件夹',
-            level: 1,
-            checked: true,
-            path: '我的文件夹',
-          }, {
-            open: true,
-            name: '我的文件夹',
-            level: 1,
-            checked: true,
-            path: '我的文件夹',
-          }, {
-            open: true,
-            name: '我的文件夹',
-            level: 1,
-            checked: true,
-            path: '我的文件夹',
-          }, {
-            open: true,
-            name: '我的文件夹',
-            level: 1,
-            checked: true,
-            path: '我的文件夹',
-          }, {
-            open: true,
-            name: '我的文件夹',
-            level: 1,
-            checked: true,
-            path: '我的文件夹',
-          }, {
-            open: true,
-            name: '我的文件夹',
-            level: 1,
-            checked: true,
-            path: '我的文件夹',
-          }, {
-            open: true,
-            name: '我的文件夹',
-            level: 1,
-            checked: true,
-            path: '我的文件夹',
-          }, {
-            open: true,
-            name: '我的文件夹',
-            level: 1,
-            checked: true,
-            path: '我的文件夹',
-          }, {
-            open: true,
-            name: '我的文件夹',
-            level: 1,
-            checked: true,
-            path: '我的文件夹',
-          }, ]
         }],
         isClick: false,
         hasRightClicked: false,
@@ -174,14 +70,21 @@
       },
       currentRightSelectNode() {
         return store.state.currentRightSelectNode
+      },
+      currentFiles() {
+        let arr = []
+        if(this.currentNode && this.currentNode.children && this.currentNode.children.length > 0) {
+          this.currentNode.children.forEach(item => {
+            if(item.type === 2) {
+              arr.push(item)
+            }
+          })
+        }
+        return arr
       }
     },
     watch: {},
     methods: {
-      scroll() {
-        // document.querySelector('.folders').style.overflowY = 'auto'
-        console.log('移动到')
-      },
       binClickHandle() {
         // this.isClick = true
         store.dispatch('setCurrentNode', null)
@@ -207,7 +110,7 @@
       },
     },
     created() {
-      store.dispatch('invokeSetRoot', this.treeData[1])
+      store.dispatch('invokeSetRoot', this.treeData[0])
     }
   }
 </script>
@@ -259,11 +162,10 @@
       display: flex;
       .folders {
         width: 218px;
-        height: 100%; // overflow-x: hidden; 
-        overflow: hidden; // border-right: 1px solid #dfe1e4;
+        height: 100%;
+        overflow: hidden;
         position: relative;
-        // background: #388def;
-        overflow-y: auto; // background: #388def;
+        // overflow-y: auto; 
         .bin {
           text-align: left;
           height: 40px;
@@ -303,14 +205,12 @@
         }
       }
       .files {
-        width: 300px;
+        width: 200px;
         height: 100%;
-        background-image: url('../assets/logo.svg');
-        .fixed {
-          width: 100px;
-          height: 40px;
-          // background: #388def;
-          position: fixed;
+        // background-image: url('../assets/logo.svg');
+        .file {
+          width: 100%;
+          height: 100px;
         }
       }
     }

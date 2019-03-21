@@ -30,6 +30,8 @@ const state = {
   //记录当前按下的按键
   currentKeyDown: '',
   nameBeforeEdit: '',
+  //当前要展示的文件数组列表
+  // currentFiles: []
 }
 const getters = {
 }
@@ -88,7 +90,7 @@ const mutations = {
   },
   setNameBeforeEdit(state, val) {
     Vue.set(state, 'nameBeforeEdit', val)
-  }
+  },
 }
 
 const actions = {
@@ -133,7 +135,7 @@ const actions = {
   },
   invokeSetNameBeforeEdit(context, val) {
     context.commit('setNameBeforeEdit', val)
-  }
+  },
 }
 
 export default new Vuex.Store({
