@@ -10,16 +10,18 @@
       <div class="folders">
         <Tree :data="treeData" />
         <div class="bin" :class="{
-            isSelected: isSelected,
-            toBeEdit: isToBeEdit
-          }" @click="binClickHandle" @mouseup="rightCilckHandle()">
+                isSelected: isSelected,
+                toBeEdit: isToBeEdit
+              }" @click="binClickHandle" @mouseup="rightCilckHandle()">
           <i class="binIcon"></i>
           <span>回收站</span>
         </div>
       </div>
+      <div class="partLine1"></div>
       <div class="files">
         <div class="fixed"></div>
       </div>
+      <div class="partLine2"></div>
       <div class="fileContent">
       </div>
     </center>
@@ -29,16 +31,125 @@
 <script>
   import Tree from './tree/Tree'
   import store from '../store'
-  import { clearInterval } from 'timers';
+  import {
+    clearInterval
+  } from 'timers';
   export default {
     data() {
       return {
+        // scrollTrackStyle: {
+        //   backgroundColor: 'transparent',
+        // },
+        // scrollBarStyle: {},
         treeData: [{
           open: true,
           name: '我的文件夹',
           level: 0,
           checked: true,
           path: '我的文件夹',
+          children: [{
+            open: true,
+            name: '我的文件夹',
+            level: 1,
+            checked: true,
+            path: '我的文件夹',
+          }, {
+            open: true,
+            name: '我的文件夹',
+            level: 1,
+            checked: true,
+            path: '我的文件夹',
+          }, {
+            open: true,
+            name: '我的文件夹',
+            level: 1,
+            checked: true,
+            path: '我的文件夹',
+          }, {
+            open: true,
+            name: '我的文件夹',
+            level: 1,
+            checked: true,
+            path: '我的文件夹',
+          }, {
+            open: true,
+            name: '我的文件夹',
+            level: 1,
+            checked: true,
+            path: '我的文件夹',
+          }, {
+            open: true,
+            name: '我的文件夹',
+            level: 1,
+            checked: true,
+            path: '我的文件夹',
+          }, {
+            open: true,
+            name: '我的文件夹',
+            level: 1,
+            checked: true,
+            path: '我的文件夹',
+          }, {
+            open: true,
+            name: '我的文件夹',
+            level: 1,
+            checked: true,
+            path: '我的文件夹',
+          }, {
+            open: true,
+            name: '我的文件夹',
+            level: 1,
+            checked: true,
+            path: '我的文件夹',
+          }, {
+            open: true,
+            name: '我的文件夹',
+            level: 1,
+            checked: true,
+            path: '我的文件夹',
+          }, {
+            open: true,
+            name: '我的文件夹',
+            level: 1,
+            checked: true,
+            path: '我的文件夹',
+          }, {
+            open: true,
+            name: '我的文件夹',
+            level: 1,
+            checked: true,
+            path: '我的文件夹',
+          }, {
+            open: true,
+            name: '我的文件夹',
+            level: 1,
+            checked: true,
+            path: '我的文件夹',
+          }, {
+            open: true,
+            name: '我的文件夹',
+            level: 1,
+            checked: true,
+            path: '我的文件夹',
+          }, {
+            open: true,
+            name: '我的文件夹',
+            level: 1,
+            checked: true,
+            path: '我的文件夹',
+          }, {
+            open: true,
+            name: '我的文件夹',
+            level: 1,
+            checked: true,
+            path: '我的文件夹',
+          }, {
+            open: true,
+            name: '我的文件夹',
+            level: 1,
+            checked: true,
+            path: '我的文件夹',
+          }, ]
         }],
         isClick: false,
         hasRightClicked: false,
@@ -46,6 +157,7 @@
     },
     components: {
       Tree,
+      // scrollBar
     },
     computed: {
       currentNode() {
@@ -66,6 +178,10 @@
     },
     watch: {},
     methods: {
+      scroll() {
+        // document.querySelector('.folders').style.overflowY = 'auto'
+        console.log('移动到')
+      },
       binClickHandle() {
         // this.isClick = true
         store.dispatch('setCurrentNode', null)
@@ -91,12 +207,28 @@
       },
     },
     created() {
-      store.dispatch('invokeSetRoot', this.treeData[0])
+      store.dispatch('invokeSetRoot', this.treeData[1])
     }
   }
 </script>
 
 <style lang="less" scoped>
+  ::-webkit-scrollbar {
+    width: 6px;
+    position: absolute;
+    background-color: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(213, 214, 215, 1);
+    border-radius: 10px;
+    position: absolute;
+  }
+  ::-webkit-scrollbar-track {
+    // -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+    background-color: transparent;
+    border-radius: 10px;
+    position: absolute;
+  }
   .center {
     position: absolute;
     left: 50%;
@@ -127,10 +259,11 @@
       display: flex;
       .folders {
         width: 218px;
-        height: 100%;
-        overflow-y: scroll;
-        overflow-x: hidden;
-        border-right: 1px solid #dfe1e4;
+        height: 100%; // overflow-x: hidden; 
+        overflow: hidden; // border-right: 1px solid #dfe1e4;
+        position: relative;
+        // background: #388def;
+        overflow-y: auto; // background: #388def;
         .bin {
           text-align: left;
           height: 40px;
@@ -147,6 +280,27 @@
             background-position: -290px 209px;
           }
         }
+        &:hover {
+          overflow-y: auto; // background: cadetblue;
+        } // &::after {
+        //   content: '';
+        //   position: absolute;
+        //   width: 2px;
+        //   height: 100%;
+        //   // height: 720px;
+        //   top: 68px;
+        //   right: 0;
+        // }
+        // &::after:hover {
+        //   cursor: ew-resize;
+        // }
+      }
+      .partLine1 {
+        width: 1px;
+        background: #dfe1e4;
+        &:hover {
+          cursor: ew-resize;
+        }
       }
       .files {
         width: 300px;
@@ -155,7 +309,7 @@
         .fixed {
           width: 100px;
           height: 40px;
-          background: #388def;
+          // background: #388def;
           position: fixed;
         }
       }

@@ -442,6 +442,10 @@
     .isSelected {
         background: #f0f0f2;
     }
+    // .li-hover-item {
+    //     z-index: 999999999 !important;
+    //     position: absolute;
+    // }
     .toBeEdit {
         border: 1px solid #388def;
         border-radius: 2%;
@@ -460,7 +464,11 @@
         }
         .li-hover-item {
             position: relative;
+            width: 218px;
             height: 40px;
+            // background: #f0f0f2;
+            // z-index: 9999999999;
+            // background: #79ace7;
             line-height: 40px; // padding-left: 100px; 
             .arrow {
                 position: absolute;
