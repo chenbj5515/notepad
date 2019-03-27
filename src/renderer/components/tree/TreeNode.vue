@@ -3,23 +3,26 @@
         <li :class="['node']" v-for="node in data" :key='node.index'>
             <div v-if="node.type === 1">
                 <div v-if="hasFolderChild(node)" @mouseup="rightCilckHandle(node)" :class="{
-                            isSelected: node.isSelect && node === currentNode,
-                            toBeEdit: hasRightClicked && node === currentRightSelectNode
-                        }" class="li-hover-item hasChild" :style="{ paddingLeft: ( node.level*15 + 33 ) + 'px' }">
-                    <Icon class="arrow" color="#909090" @click.stop="foldHandle(node)" :style="{
+                        isSelected: node.isSelect && node === currentNode,
+                        toBeEdit: hasRightClicked && node === currentRightSelectNode
+                    }" class="li-hover-item hasChild" :style="{ paddingLeft: ( node.level*15 + 33 ) + 'px' }">
+                    <Icon class="arrow" color="#909090" @click.stop="foldHandle(node)" 
+                        :style="{
                             left: node.level*15 + 12 + 'px'
-                        }" :class="{
+                        }" 
+                        :class="{
                             rotated: node.open
-                        }" v-if="node.children.length > 0" size="15" type="md-arrow-dropright" />
+                        }" v-if="node.children.length > 0" size="15" type="md-arrow-dropright" 
+                    />
                     <i class="folderIcon folderIconOpen" color="#797f8d" size="18" v-if="node.children.length > 0 && node.open" type="ios-folder-open"></i>
                     <i class="folderIcon folderIconOutline" size="18" v-if="!node.children || node.children.length === 0 || !node.open" type="ios-folder-outline"></i>
                     <input v-if="isEditing(node)" ref="input" class="editName" v-model="node.name" @focus="focus(node)" @blur="blur(node)" @mouseup.stop="" @click.stop="" type="text">
                     <p class="nodeName" v-else> {{ node.name }} </p>
                 </div>
                 <div v-else @mouseup="rightCilckHandle(node)" class="li-hover-item hasNoChild" :style="{ paddingLeft: ( node.level*15 + 33 ) + 'px' }" :class="{
-                            isSelected: node.isSelect && node === currentNode,
-                            toBeEdit: hasRightClicked && node === currentRightSelectNode
-                        }">
+                        isSelected: node.isSelect && node === currentNode,
+                        toBeEdit: hasRightClicked && node === currentRightSelectNode
+                    }">
                     <i class="folderIcon folderIconOutline" size="18" type="ios-folder-outline"></i>
                     <input v-if="isEditing(node)" class="editName" v-model="node.name" @focus="focus(node)" @blur="blur(node)" @mouseup.stop="" @click.stop="" type="text">
                     <p class="nodeName" v-else> {{ node.name }} </p>
@@ -62,7 +65,6 @@
                 x: 0,
                 y: 0,
                 currentFileName: '',
-                editingNode: null, //当前正在重命名的node
             }
         },
         components: {
@@ -78,37 +80,8 @@
             },
             renaming() {
                 let val = store.state.renaming
-                let node = this.editingNode
                 if (!val) {
-                    console.log(node, 'node===')
-                    // 编辑结束时，要按照名字的字典序把重命名的文件夹的位置替换到合理的位置
-                    if (this.root !== node && node) {
-                        let parent = TreeOp.getParent(this.root, node)
-                        if (parent) {
-                            console.log(this.isNewFolder, 'isNewFolder')
-                            if (this.isNewFolder) {
-                                //如果是新建文件的话对应的是node的mkdir操作
-                                console.log(`${node.name}`)
-                                node.path = `${parent.path}/${node.name}`
-                                console.log(node.path)
-                                ipcRenderer.send('generateFolder', node.path)
-                            } else {
-                                //如果是重命名则对应的是rename操作
-                                let pos = node.path.lastIndexOf('/')
-                                let folderName = node.path.slice(pos + 1)
-                                let newPath = node.path.replace(folderName, node.name)
-                                let obj = {
-                                    oldPath: node.path,
-                                    newPath
-                                }
-                                console.log(obj, 'obj====')
-                                ipcRenderer.send('rename', JSON.stringify(obj))
-                            }
-                            //无论是新建还是重命名都需要避免重复命名并且重排位置
-                            this.avoidSameName(node, parent)
-                            this.insertNode(node, parent)
-                        }
-                    }
+                    this.afterEditing()
                 }
                 return val
             },
@@ -133,8 +106,43 @@
             currentKeyDown() {
                 return store.state.currentKeyDown
             },
+            currentFile() {
+                return store.state.currentFile
+            },
+            editingNode() {
+                return store.state.editingNode
+            }
         },
         methods: {
+            afterEditing() {
+                let node = this.editingNode
+                //编辑结束时，要按照名字的字典序把重命名的文件夹的位置替换到合理的位置,并且通知主进程进行新文件的建立以及重命名等操作
+                if (this.root !== node && node) {
+                    let parent = TreeOp.getParent(this.root, node)
+                    if (parent) {
+                        if (this.isNewFolder) {
+                            //如果是新建文件的话对应的是node的mkdir操作
+                            node.path = `${parent.path}/${node.name}`
+                            ipcRenderer.send('generateFolder', node.path)
+                        } else {
+                            //如果是重命名则对应的是rename操作
+                            let pos = node.path.lastIndexOf('/')
+                            let folderName = node.path.slice(pos + 1)
+                            let newPath = node.path.replace(folderName, node.name)
+                            let obj = {
+                                oldPath: node.path,
+                                newPath
+                            }
+                            ipcRenderer.send('rename', JSON.stringify(obj))
+                            node.path = newPath
+                        }
+                        //无论是新建还是重命名都需要避免重复命名并且重排位置
+                        this.avoidSameName(node, parent)
+                        this.insertNode(node, parent)
+                    }
+                }
+                store.dispatch('invokeSetIsNewFolderState', false)
+            },
             hasFolderChild(node) {
                 //判断是否有类型为文件夹的子节点
                 let num = 0
@@ -159,15 +167,12 @@
                 let delIndex = parent.children.indexOf(node)
                 parent.children.splice(delIndex, 1)
                 let index = this.getInsertPos(parent, node)
-                console.log(index, 'index====')
                 if (index || index === 0) {
-                    console.log(index, 'index====')
                     parent.children.splice(index, 0, node)
                 }
             },
             deleteNode(selectType) {
                 TreeOp.deleteNode(selectType)
-                console.log(this.currentRightSelectNode.path, 'deletePath====')
                 ipcRenderer.send('delete', this.currentRightSelectNode.path)
             },
             focus(node) {
@@ -176,9 +181,7 @@
                 dom.select()
             },
             blur(node) {
-                focus.count = false
-                // node.name = this.currentFileName
-                store.dispatch('invokeSetIsNewFolderState', false)
+                //失焦的时候如果已经没有正在编辑中
             },
             selectDom() {
                 // document.querySelector('.editName').focus()
@@ -190,7 +193,7 @@
             isEditing(node) {
                 var val = (node === this.currentRightSelectNode && this.renaming)
                 if (val) {
-                    this.editingNode = node
+                    store.dispatch('setEditingNode', node)
                     this.$nextTick(() => {
                         this.selectDom()
                     })
@@ -204,10 +207,11 @@
                 let node = this.currentRightSelectNode
                 let newCh = {
                     open: false,
-                    name: '无标题笔记',
+                    name: '',
                     level: node.level + 1,
                     checked: false,
                     type: 2,
+                    path: '',
                 }
                 if (!node.children) {
                     let children = []
@@ -215,8 +219,11 @@
                     this.$set(node, 'children', children)
                 }
                 newCh.name = this.generateFileName(node)
+                // let parent = TreeOp.getParent(this.root, node) || this.root
+                newCh.path = `${node.path}/${newCh.name}.txt`
                 node.children.unshift(newCh)
-                console.log(node.children)
+                store.dispatch('setCurrentFile', newCh)
+                ipcRenderer.send('generateFile', newCh.path)
             },
             generateFileName(node) {
                 if (node.children && node.children.length > 0) {
@@ -306,7 +313,6 @@
                         }
                     }
                     if (hasSiblings) {
-                        console.log('return的值')
                         return index + 1
                     }
                     //如果遍历结束也没有找到比要被安排位置的节点大的节点，那么插入到最大的后面
@@ -316,8 +322,6 @@
                     //如果一直没有找到相同前缀的，则按照字典序排
                     for (var i = 0; i < node.children.length; i++) {
                         let currentChild = node.children[i]
-                        console.log(chName, 'chName===')
-                        console.log(currentChild.name, 'currentChild.name===')
                         if (chName < currentChild.name) {
                             return i
                         }
@@ -349,7 +353,6 @@
                     this.$set(node, 'children', children)
                 }
                 let index = this.getInsertPos(node, newCh)
-                console.log(index, 'index====')
                 if (index || index === 0) {
                     node.children.splice(index, 0, newCh)
                 }
@@ -378,6 +381,7 @@
             selectHandle(node) {
                 store.dispatch('invokeSetHasRightClickedState', false)
                 store.dispatch('setCurrentNode', node)
+                store.dispatch('setCurrentType', 0)
                 //把rename的状态置为false使下次点击重命名才会重新置为true
                 store.dispatch('invokeSetRenameState', false)
                 //isSelect控制背景色是否为选中时的灰色

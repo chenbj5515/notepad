@@ -30,8 +30,13 @@ const state = {
   //记录当前按下的按键
   currentKeyDown: '',
   nameBeforeEdit: '',
-  //当前要展示的文件数组列表
-  // currentFiles: []
+  //当前选中的文件
+  currentFile: null,
+  //当前要展示的文件类型
+  currentType: NaN,
+  //编辑中的节点
+  editingNode: null
+  
 }
 const getters = {
 }
@@ -91,6 +96,15 @@ const mutations = {
   setNameBeforeEdit(state, val) {
     Vue.set(state, 'nameBeforeEdit', val)
   },
+  setCurrentType(state, val) {
+    Vue.set(state, 'currentType', val)
+  },
+  setCurrentFile(state, val) {
+    Vue.set(state, 'currentFile', val)
+  },
+  setEditingNode(state, val) {
+    Vue.set(state, 'editingNode', val)
+  }
 }
 
 const actions = {
@@ -136,6 +150,15 @@ const actions = {
   invokeSetNameBeforeEdit(context, val) {
     context.commit('setNameBeforeEdit', val)
   },
+  setCurrentType(context, val) {
+    context.commit('setCurrentType', val)
+  },
+  setCurrentFile(context, val) {
+    context.commit('setCurrentFile', val)
+  },
+  setEditingNode(context, val) {
+    context.commit('setEditingNode', val)
+  }
 }
 
 export default new Vuex.Store({

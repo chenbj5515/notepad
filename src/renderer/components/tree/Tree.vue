@@ -23,33 +23,36 @@
       TreeNode
     },
     computed: {
-      lastKeyDown() {
-        return store.state.lastKeyDown
-      },
-      currentKeyDown() {
-        return store.state.currentKeyDown
-      },
       currentNode() {
         return store.state.currentNode
+      },
+      currentType() {
+        return store.state.currentType
       }
     },
     mounted() {
       this.container = document.querySelector('.container')
       this.preventMenu()
       document.addEventListener('keydown', () => {
+        console.log(event.code)
         store.dispatch('invokeSetCurrentKeyDown', event.code)
-        if (this.lastKeyDown === '') {
-          store.dispatch('invokeSetLastKeyDown', event.code)
-        }
         if (this.lastKeyDown === 'MetaLeft' && this.currentKeyDown === 'Backspace') {
-          console.log(this.currentNode.path, 'deletePath====')
-          ipcRenderer.send('delete', this.currentNode.path)
-          TreeOp.deleteNode('left')
+          if(this.currentType === 0) {
+            console.log('要删的是文件夹')
+            ipcRenderer.send('delete', this.currentNode.path)
+            TreeOp.deleteNode('left')
+          }
+          if(this.currentType === 1) {
+            console.log('要删的是文件')
+            console.log(this.currentFile)
+            ipcRenderer.send('delete', this.currentFile.path)
+            TreeOp.deleteFile()
+          }
         }
-      })
-      document.addEventListener('keyup', () => {
-        store.dispatch('invokeSetCurrentKeyDown', '')
-        store.dispatch('invokeSetLastKeyDown', '')
+        if (this.lastKeyDown === 'MetaLeft' && this.currentKeyDown === 'keyS') {
+
+        }
+        store.dispatch('invokeSetLastKeyDown', this.currentKeyDown)
       })
     },
     methods: {
@@ -58,6 +61,10 @@
           e.preventDefault();
         })
       }
+    },
+    mounted() {
+      this.container = document.querySelector('.container')
+      this.preventMenu()
     }
   }
 </script>

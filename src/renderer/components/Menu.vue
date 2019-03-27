@@ -10,7 +10,6 @@
                 <div class="menuItem" @click="newFileClickHandle">笔记</div>
                 <div class="menuItem" @mouseup.stop="folderMouseupHandle" @click.stop="newFoldClickHandle">文件夹</div>
             </div>
-            <!-- <MenuNew  class="menu-new"></MenuNew> -->
         </div>
         <div v-if="!isRoot" class="menuItem" @click.stop="renameClickHandle">重命名</div>
         <div v-if="!isRoot" class="menuItem" @click="deleteClickHandle">删除</div>
@@ -57,7 +56,10 @@
             },
             newFileClickHandle() {
                 this.$emit('newFile')   
-                store.dispatch('invokeSetHasRightClickedState', false)      
+                store.dispatch('invokeSetHasRightClickedState', false)    
+                store.dispatch('setCurrentNode', this.currentRightSelectNode)
+                this.$set(store.state.currentNode, 'isSelect', true)
+                store.dispatch('setCurrentType', 1) 
             },
             folderMouseupHandle() {
 

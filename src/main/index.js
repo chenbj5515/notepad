@@ -1,5 +1,13 @@
-import { app, BrowserWindow } from 'electron'
-import { Menu, MenuItem, dialog, ipcMain } from 'electron';
+import {
+  app,
+  BrowserWindow
+} from 'electron'
+import {
+  Menu,
+  MenuItem,
+  dialog,
+  ipcMain
+} from 'electron';
 import electron from 'electron'
 
 import '../renderer/store'
@@ -19,11 +27,11 @@ if (process.env.NODE_ENV !== 'development') {
 }
 
 let mainWindow
-const winURL = process.env.NODE_ENV === 'development'
-  ? `http://localhost:9080`
-  : `file://${__dirname}/index.html`
+const winURL = process.env.NODE_ENV === 'development' ?
+  `http://localhost:9080` :
+  `file://${__dirname}/index.html`
 
-function createWindow () {
+function createWindow() {
   /**
    * Initial window options
    */
@@ -36,7 +44,7 @@ function createWindow () {
     titleBarStyle: 'hidden'
     // type: 'textured',
   })
-  
+
   mainWindow.loadURL(winURL)
 
   mainWindow.on('closed', () => {
@@ -60,47 +68,71 @@ app.on('activate', () => {
 
 var str = '我的文件夹'
 
-fs.mkdir(str, { recursive: true }, (err) => {
-  // if (err) throw err;
-});
+// var createStream = fs.createWriteStream("我的文件夹/cbj.txt");
+// createStream.write("<p>我是你哥哥</p><br><p>我们都是你妈的儿子</p>")
+// createStream.end();
 
-//删除所有子文件/文件夹
+// 删除所有子文件/文件夹
 deleteFolderRecursive('我的文件夹', true)
 
 //监听与渲染进程的通信
-ipcMain.on('generateFolder',function(event, arg){
-  fs.mkdir(arg, { recursive: false }, (err) => {
+ipcMain.on('generateFolder', function (event, arg) {
+  fs.mkdir(arg, {
+    recursive: false
+  }, (err) => {
     console.log(err)
   });
 })
 
-
-ipcMain.on('rename',function(event, arg) {
-  let obj = JSON.parse(arg)
-  fs.rename(obj.oldPath, obj.newPath, (err) => {
-  })
+ipcMain.on('generateFile', function (event, arg) {
+  let fileStream = fs.createWriteStream(arg)
+  fileStream.end()
 })
 
-ipcMain.on('delete',function(event, arg) {
-  console.log(arg)
+ipcMain.on('readFile', function (event, arg) {
+  fs.readFile(arg, function (err, data) {
+    if (err) {
+      return console.error(err);
+    }
+    console.log("异步读取: " + data.toString());
+    event.sender.send('readFile-reply', data.toString())
+  });
+})
+
+
+ipcMain.on('rename', function (event, arg) {
+  let obj = JSON.parse(arg)
+  fs.rename(obj.oldPath, obj.newPath, (err) => {})
+})
+
+ipcMain.on('delete', function (event, arg) {
   deleteFolderRecursive(arg)
 })
 
+ipcMain.on('reserve', function (event, arg) {
+  let obj = JSON.parse(arg)
+  let fileStream = fs.createWriteStream(obj.path)
+  fileStream.write(obj.content)
+  fileStream.end()
+})
+
 function deleteFolderRecursive(path, remainSelf) {
-  if( fs.existsSync(path) ) {
-    fs.readdirSync(path).forEach(function(file) {
+  if (fs.existsSync(path)) {
+    fs.readdirSync(path).forEach(function (file) {
       var curPath = path + "/" + file;
-      if(fs.statSync(curPath).isDirectory()) { // recurse
+      if (fs.statSync(curPath).isDirectory()) { // recurse
         deleteFolderRecursive(curPath);
       } else { // delete file
         fs.unlinkSync(curPath);
       }
     });
-    if(!remainSelf) {
+    if (!remainSelf) {
       fs.rmdirSync(path);
     }
   }
 };
+
+
 // deleteFolderRecursive('我的文件夹/新建文件夹')
 // fs.rmdir('我的文件夹/新建文件夹', err => {
 //   console.log(err)
