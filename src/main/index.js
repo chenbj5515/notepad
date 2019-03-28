@@ -68,9 +68,6 @@ app.on('activate', () => {
 
 var str = '我的文件夹'
 
-// var createStream = fs.createWriteStream("我的文件夹/cbj.txt");
-// createStream.write("<p>我是你哥哥</p><br><p>我们都是你妈的儿子</p>")
-// createStream.end();
 
 // 删除所有子文件/文件夹
 deleteFolderRecursive('我的文件夹', true)

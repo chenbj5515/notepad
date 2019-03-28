@@ -121,6 +121,7 @@
                     let parent = TreeOp.getParent(this.root, node)
                     if (parent) {
                         if (this.isNewFolder) {
+                            this.avoidSameName(node, parent)
                             //如果是新建文件的话对应的是node的mkdir操作
                             node.path = `${parent.path}/${node.name}`
                             ipcRenderer.send('generateFolder', node.path)
@@ -137,7 +138,6 @@
                             node.path = newPath
                         }
                         //无论是新建还是重命名都需要避免重复命名并且重排位置
-                        this.avoidSameName(node, parent)
                         this.insertNode(node, parent)
                     }
                 }
@@ -159,7 +159,17 @@
                 let children = parent.children
                 children.forEach(item => {
                     if (item !== node && item.name === node.name) {
-                        node.name += '(1)'
+                        let value = node.name
+                        console.log(value)
+                        if(value.slice(-1) === ')') {
+                            let num = value.slice(0, -1).match(/(\d+)$/g)
+                            let lastLeftBracket = value.lastIndexOf('(')
+                            let priName = value.slice(0, lastLeftBracket)
+                            node.name = `${priName}(${parseInt(num) + 1})`
+                        } 
+                        else {
+                            node.name = `${value}(1)`
+                        }
                     }
                 })
             },

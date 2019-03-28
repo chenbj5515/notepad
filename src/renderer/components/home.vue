@@ -148,7 +148,15 @@
         this.currentFiles.forEach((item, index) => {
           if (index !== this.currentIndex && item.name === value) {
             console.log(index, this.currentIndex, item.name, value)
-            this.currentFiles[this.currentIndex].name = `${value}(1)`
+            if(value.slice(-1) === ')') {
+              let num = value.slice(0, -1).match(/(\d+)$/g)
+              let lastLeftBracket = value.lastIndexOf('(')
+              let priName = value.slice(0, lastLeftBracket)
+              this.currentFiles[this.currentIndex].name = `${priName}(${parseInt(num) + 1})`
+            } 
+            else {
+              this.currentFiles[this.currentIndex].name = `${value}(1)`
+            }
           }
         })
       },
@@ -176,6 +184,10 @@
         clearInterval(store.state.timer)
         if (event.code === 'Enter') {
           store.dispatch('invokeSetRenameState', false)
+          let dom = document.querySelector('.fileTitle')
+          if(dom) {
+            dom.blur()
+          }
         }
       },
       rightCilckHandle() {
