@@ -120,8 +120,8 @@
                 if (this.root !== node && node) {
                     let parent = TreeOp.getParent(this.root, node)
                     if (parent) {
+                        this.avoidSameName()
                         if (this.isNewFolder) {
-                            this.avoidSameName(node, parent)
                             //如果是新建文件的话对应的是node的mkdir操作
                             node.path = `${parent.path}/${node.name}`
                             ipcRenderer.send('generateFolder', node.path)
@@ -155,7 +155,9 @@
                 }
                 return num === 0 ? false : true
             },
-            avoidSameName(node, parent) {
+            avoidSameName() {
+                let node = this.editingNode
+                let parent = TreeOp.getParent(this.root, node)
                 let children = parent.children
                 children.forEach(item => {
                     if (item !== node && item.name === node.name) {

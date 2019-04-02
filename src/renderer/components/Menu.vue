@@ -8,7 +8,7 @@
                     top: y + 'px'   
                 }">
                 <div class="menuItem" @click="newFileClickHandle">笔记</div>
-                <div class="menuItem" @mouseup.stop="folderMouseupHandle" @click.stop="newFoldClickHandle">文件夹</div>
+                <div class="menuItem" @click.stop="newFoldClickHandle">文件夹</div>
             </div>
         </div>
         <div v-if="!isRoot" class="menuItem" @click.stop="renameClickHandle">重命名</div>
@@ -60,9 +60,6 @@
                 store.dispatch('setCurrentNode', this.currentRightSelectNode)
                 this.$set(store.state.currentNode, 'isSelect', true)
                 store.dispatch('setCurrentType', 1) 
-            },
-            folderMouseupHandle() {
-
             },
             newFoldClickHandle() {
                 this.$emit('newFolder')

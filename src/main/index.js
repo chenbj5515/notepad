@@ -102,8 +102,12 @@ ipcMain.on('rename', function (event, arg) {
   fs.rename(obj.oldPath, obj.newPath, (err) => {})
 })
 
-ipcMain.on('delete', function (event, arg) {
-  deleteFolderRecursive(arg)
+ipcMain.on('deleteFolder', function (event, arg) {
+  deleteFolderRecursive(arg, false)
+})
+
+ipcMain.on('deleteFile', function(event, arg) {
+  fs.unlinkSync(arg)
 })
 
 ipcMain.on('reserve', function (event, arg) {

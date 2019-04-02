@@ -145,20 +145,29 @@
     methods: {
       titleBlur() {
         let value = document.querySelector('.fileTitle').value
-        this.currentFiles.forEach((item, index) => {
+        let hasSame = false
+        for(let i = 0; i < this.currentFiles.length; i++) {
+          let index = i
+          let item = this.currentFiles[i]
           if (index !== this.currentIndex && item.name === value) {
             console.log(index, this.currentIndex, item.name, value)
+            hasSame = true
             if(value.slice(-1) === ')') {
               let num = value.slice(0, -1).match(/(\d+)$/g)
               let lastLeftBracket = value.lastIndexOf('(')
               let priName = value.slice(0, lastLeftBracket)
               this.currentFiles[this.currentIndex].name = `${priName}(${parseInt(num) + 1})`
+              break
             } 
             else {
               this.currentFiles[this.currentIndex].name = `${value}(1)`
+              break
             }
           }
-        })
+        }
+        if(!hasSame) {
+          this.currentFiles[this.currentIndex].name = value
+        }
       },
       onEditorReady(editor) {},
       onEditorBlur() {}, // 失去焦点事件
@@ -183,6 +192,7 @@
       keydownHandle() {
         clearInterval(store.state.timer)
         if (event.code === 'Enter') {
+          console.log('触发了失焦')
           store.dispatch('invokeSetRenameState', false)
           let dom = document.querySelector('.fileTitle')
           if(dom) {
@@ -206,11 +216,11 @@
         store.dispatch('invokeSetCurrentKeyDown', event.code)
         if (this.lastKeyDown === 'MetaLeft' && this.currentKeyDown === 'Backspace') {
           if (this.currentType === 0) {
-            ipcRenderer.send('delete', this.currentNode.path)
+            ipcRenderer.send('deleteFolder', this.currentNode.path)
             TreeOp.deleteNode('left')
           }
           if (this.currentType === 1) {
-            ipcRenderer.send('delete', this.currentFile.path)
+            ipcRenderer.send('deleteFile', this.currentFile.path)
             TreeOp.deleteFile()
           }
         }
